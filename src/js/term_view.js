@@ -154,7 +154,10 @@ export class TermView extends EventEmitter {
     this.onInput(e);
   }, false);
 
-  let shouldAcceptInput = () => !this.app.modalShown && !this.app.contextMenuShown;
+  let shouldAcceptInput = (event) =>
+    !this.app.modalShown &&
+    !this.app.contextMenuShown &&
+    !this.app.isDialogOrExcludedTarget(event);
   let keyEventFilter = (e) => {
     // On both Mac and Windows, control/alt+key will be sent as original key
     // code even under IME.
@@ -223,9 +226,9 @@ export class TermView extends EventEmitter {
   };
 
   addEventListener('keydown', (e) => {
-    if (!shouldAcceptInput())
+    if (!shouldAcceptInput(e))
       return;
-    if (this.app && !this.app.isDialogOrExcludedTarget(e) && typeof document !== 'undefined' && document.activeElement !== this.input) {
+    if (this.app && typeof document !== 'undefined' && document.activeElement !== this.input) {
       const isHoldSelectionModifier =
         e.key === 'Control' ||
         e.key === 'Meta' ||
@@ -252,7 +255,7 @@ export class TermView extends EventEmitter {
   addEventListener('keyup', (e) => {
     // We don't need to handle code 229 here, as it should be already composing.
 
-    if (!shouldAcceptInput())
+    if (!shouldAcceptInput(e))
       return;
     if (e.key === 'Shift' && !e.ctrlKey && !e.metaKey && !e.altKey && !this.isSelectionCollapsed()) {
       this.clearSelection();
@@ -533,8 +536,10 @@ export class TermView extends EventEmitter {
         ? performance.now()
         : 0;
       const currentFontSize = this.fontSizePx || (this.chw ? this.chw * 2 : this.chh);
+      const blacklistPlugin = this.app?.getPlugin?.('blacklist');
+      const displayLines = blacklistPlugin?.filterLines?.(lines) || lines;
       const screenInst = renderScreen(
-        /* For Screen#componentDidUpdate */lines.slice(),
+        /* For Screen#componentDidUpdate */displayLines.slice(),
         currentFontSize,
         /* showsLinkPreview */false,
         this.enableLinkHoverPreview,

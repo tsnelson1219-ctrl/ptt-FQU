@@ -21,6 +21,8 @@ export default defineConfig(({ mode, command }) => {
     'A web client for connecting to the ANSI based terminals via WebSockets.';
   const dynamicTitle = process.env.DYNAMIC_TITLE ?? 'true';
   const siteUrl = process.env.SITE_URL;
+  const productionSiteUrl =
+    siteUrl || (process.env.VERCEL === '1' ? '/api/bbs' : 'wss://ws.ptt.cc/bbs');
 
   const getCommitHash = () => {
     if (process.env.COMMIT_HASH) return process.env.COMMIT_HASH;
@@ -227,7 +229,7 @@ export default defineConfig(({ mode, command }) => {
       'process.env.APP_TITLE': JSON.stringify(appTitle),
       'process.env.DYNAMIC_TITLE': JSON.stringify(dynamicTitle !== 'false'),
       'process.env.SITE_URL': JSON.stringify(
-        isProduction ? siteUrl || 'wss://ws.ptt.cc/bbs' : '/bbs'
+        isProduction ? productionSiteUrl : '/bbs'
       ),
       'process.env.ALLOW_OVERRIDE_FROM_QUERY': JSON.stringify(
         isDevelopment || process.env.ALLOW_OVERRIDE_FROM_QUERY === 'yes'

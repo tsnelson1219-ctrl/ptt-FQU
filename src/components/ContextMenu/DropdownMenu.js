@@ -209,6 +209,23 @@ export const DropdownMenu = ({
           </MenuItem>
         </React.Fragment>
       )}
+      {(selEnabled || pluginItems.some((item) => item.showWhenClicked)) && pluginItems.some((item) => (selEnabled && item.showWhenSelected) || (!selEnabled && item.showWhenClicked)) && (
+        <React.Fragment>
+          {pluginItems.filter((item) => (selEnabled && item.showWhenSelected) || (!selEnabled && item.showWhenClicked)).map((item) => (
+            <MenuItem
+              key={item.id}
+              disabled={item.enabled === false}
+              onClick={item.onClick}
+              className={cx({
+                "DropdownMenu__Item--checked": item.checked,
+                "DropdownMenu__Item--disabled": item.enabled === false,
+              })}
+            >
+              {typeof item.label === "function" ? item.label() : item.label}
+            </MenuItem>
+          ))}
+        </React.Fragment>
+      )}
       <MenuItem divider />
       {normalEnabled && (
         <React.Fragment>
@@ -219,7 +236,7 @@ export const DropdownMenu = ({
             </span>
           </MenuItem>
           {pluginItems &&
-            pluginItems.map((item) => (
+            pluginItems.filter((item) => item.showInNormal).map((item) => (
               <MenuItem
                 key={item.id}
                 disabled={item.enabled === false}

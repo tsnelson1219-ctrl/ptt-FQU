@@ -1,0 +1,179 @@
+.PTTQuickBoards {
+  position: fixed;
+  z-index: 35;
+  top: 8px;
+  right: 8px;
+  max-width: min(70vw, 680px);
+  color: #e8edf2;
+  font: 12px/1.4 "Segoe UI", "Noto Sans TC", sans-serif;
+  pointer-events: none;
+}
+
+.PTTQuickBoards__bar,
+.PTTQuickBoards__panel {
+  border: 1px solid #344454;
+  border-radius: 8px;
+  background: rgba(12, 19, 27, 0.96);
+  box-shadow: 0 4px 18px #0006;
+  pointer-events: auto;
+}
+
+.PTTQuickBoards__bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  padding: 4px 5px;
+  scrollbar-width: thin;
+}
+
+.PTTQuickBoards__title {
+  padding: 0 4px;
+  color: #aebdca;
+  white-space: nowrap;
+}
+
+.PTTQuickBoards button {
+  border: 1px solid #3a4c5c;
+  border-radius: 6px;
+  background: #192633;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.PTTQuickBoards__board {
+  max-width: 112px;
+  overflow: hidden;
+  padding: 4px 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.PTTQuickBoards button:hover {
+  border-color: #79c9bf;
+  color: #b5f0e5;
+}
+
+.PTTQuickBoards__manageButton {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  font-size: 17px !important;
+  line-height: 1;
+}
+
+.PTTQuickBoards__panel {
+  position: absolute;
+  top: 39px;
+  right: 0;
+  width: min(340px, calc(100vw - 16px));
+  padding: 11px;
+}
+
+.PTTQuickBoards__panelHeader,
+.PTTQuickBoards__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.PTTQuickBoards__panelHeader {
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+
+.PTTQuickBoards__panelHeader button {
+  width: 25px;
+  height: 25px;
+  font-size: 17px;
+}
+
+.PTTQuickBoards__form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.PTTQuickBoards__form input {
+  min-width: 0;
+  border: 1px solid #344454;
+  border-radius: 6px;
+  background: #091017;
+  color: #e8edf2;
+  padding: 7px 8px;
+  font: inherit;
+}
+
+.PTTQuickBoards__form input:focus {
+  outline: 2px solid #438f87;
+}
+
+.PTTQuickBoards__form button,
+.PTTQuickBoards__item button {
+  padding: 5px 7px;
+}
+
+.PTTQuickBoards__list {
+  max-height: 190px;
+  overflow: auto;
+}
+
+.PTTQuickBoards__item {
+  min-height: 32px;
+  border-bottom: 1px solid #263441;
+}
+
+.PTTQuickBoards__item span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.PTTQuickBoards__item code {
+  color: #aab8c5;
+  font: inherit;
+}
+
+.PTTQuickBoards__empty,
+.PTTQuickBoards__hint {
+  margin: 7px 0 0;
+  color: #98a8b7;
+}
+
+.PTTQuickBoards__toast {
+  position: absolute;
+  top: 45px;
+  right: 0;
+  border: 1px solid #554b34;
+  border-radius: 6px;
+  background: #231e14;
+  color: #f5dfad;
+  opacity: 0;
+  padding: 6px 9px;
+  pointer-events: none;
+  transform: translateY(-3px);
+  transition: opacity 120ms ease, transform 120ms ease;
+  white-space: nowrap;
+}
+
+.PTTQuickBoards__toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (max-width: 600px) {
+  .PTTQuickBoards {
+    max-width: calc(100vw - 16px);
+  }
+
+  .PTTQuickBoards__form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .PTTQuickBoards__form button {
+    grid-column: 1 / -1;
+  }
+}

@@ -21,14 +21,6 @@ async function startApp() {
   const app = new App({ siteType, siteUrl });
   window.app = app;
 
-  if (process.env.DEVELOPER_MODE) {
-    await new Promise((resolve) => {
-      app.showAlert('developerMode', {
-        onDismiss: () => resolve()
-      });
-    });
-  }
-
   console.log("load pref from storage");
   app.showTermWindow();
   app.onValuesPrefChange(app.prefValues || readValuesWithDefault());

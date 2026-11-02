@@ -54,6 +54,8 @@ import {
   TouchKeyboardPlugin,
   TouchUIPlugin,
 } from './virtual_keyboard/index.js';
+import { Blacklist } from './blacklist/index.js';
+import { QuickBoards } from './quick_boards/QuickBoards.js';
 
 export {
   EasyReading,
@@ -85,6 +87,8 @@ export {
   VirtualKeyboardPlugin,
   TouchKeyboardPlugin,
   TouchUIPlugin,
+  Blacklist,
+  QuickBoards,
 };
 
 export { PluginBase } from './PluginBase.js';
@@ -102,7 +106,7 @@ export const PLUGIN_GROUPS = [
     titleKey: 'plugin_group_bbs',
     title: 'Taiwan BBS',
     color: '#34c759',
-    pluginIds: ['easy_reading', 'login_assist', 'auto_wrap', 'anti_idle', 'mouse_browsing', 'live_update'],
+    pluginIds: ['quick_boards', 'blacklist', 'easy_reading', 'login_assist', 'auto_wrap', 'anti_idle', 'mouse_browsing', 'live_update'],
   },
   {
     id: 'debug',
@@ -126,6 +130,8 @@ export const PLUGIN_GROUP_MAP = {
   auto_wrap: 'bbs',
   mouse_browsing: 'bbs',
   live_update: 'bbs',
+  blacklist: 'bbs',
+  quick_boards: 'bbs',
   fps_meter: 'debug',
   touch_debug_hud: 'debug',
   packet_dump: 'debug',
@@ -198,6 +204,8 @@ export const BUILTIN_PLUGINS = [
   PacketDump,
   VirtualKeyboardPlugin,
   PwaPromptPlugin,
+  Blacklist,
+  QuickBoards,
 ];
 
 registerPluginPrefs(BUILTIN_PLUGINS);

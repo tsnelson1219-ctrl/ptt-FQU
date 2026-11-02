@@ -36,6 +36,10 @@ const initialState = {
   pageY: 0,
   anchorRect: null,
   contextOnUrl: "",
+  clickX: null,
+  clickY: null,
+  clickRow: null,
+  clickCol: null,
   aElement: undefined,
   selectedText: "",
   urlEnabled: false,
@@ -436,11 +440,15 @@ export class ContextMenu extends React.Component {
       }
       return;
     }
-    this.showMenuAt(event.pageX, event.pageY, event.target);
+    this.showMenuAt(event.pageX, event.pageY, event.target, event);
   };
 
-  showMenuAt = (pageX, pageY, targetEl) => {
+  showMenuAt = (pageX, pageY, targetEl, sourceEvent) => {
     const { app } = this.props;
+    const clickPosition =
+      Number.isFinite(sourceEvent?.clientX) && Number.isFinite(sourceEvent?.clientY)
+        ? app?.clientToPos?.(sourceEvent.clientX, sourceEvent.clientY)
+        : null;
     if (app.preventContextMenuOnMouseUp) {
       app.preventContextMenuOnMouseUp = false;
       return;
@@ -475,6 +483,10 @@ export class ContextMenu extends React.Component {
       pageY,
       anchorRect: null,
       contextOnUrl,
+      clickX: Number.isFinite(sourceEvent?.clientX) ? sourceEvent.clientX : null,
+      clickY: Number.isFinite(sourceEvent?.clientY) ? sourceEvent.clientY : null,
+      clickRow: Number.isFinite(clickPosition?.row) ? clickPosition.row : null,
+      clickCol: Number.isFinite(clickPosition?.col) ? clickPosition.col : null,
       aElement,
       selectedText,
       urlEnabled,
@@ -559,6 +571,10 @@ export class ContextMenu extends React.Component {
       selEnabled,
       selectedText,
       contextOnUrl: this.state.contextOnUrl,
+      clickX: this.state.clickX,
+      clickY: this.state.clickY,
+      clickRow: this.state.clickRow,
+      clickCol: this.state.clickCol,
       isTouchDevice,
     };
 
@@ -586,7 +602,7 @@ export class ContextMenu extends React.Component {
 
       const label =
         typeof item.label === "function"
-          ? item.label(app)
+          ? item.label(app, menuContext)
           : item.label || item.id;
 
       pluginItems.push({
@@ -595,15 +611,19 @@ export class ContextMenu extends React.Component {
         checked: isChecked,
         enabled: isEnabled,
         order: item.order ?? 100,
+        showWhenSelected: Boolean(item.showWhenSelected),
+        showWhenClicked: Boolean(item.showWhenClicked),
+        showInNormal: item.showInNormal !== false,
         onClick: (event) => {
           if (!isEnabled) return;
           if (event) event.stopPropagation();
+          const menuState = this.state;
           this.handleHide();
           if (typeof item.onClick === "function") {
             item.onClick(app, {
               event,
               closeMenu: () => this.handleHide(),
-              state: this.state,
+              state: menuState,
             });
           }
         },
