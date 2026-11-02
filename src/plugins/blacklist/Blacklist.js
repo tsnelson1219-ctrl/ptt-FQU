@@ -145,6 +145,13 @@ function getArticleAuthorId(text, column) {
   return getArticleAuthor(text, column)?.id || "";
 }
 
+function getPushAuthor(text) {
+  const match = /^(\s*(?:推|噓|→)\s*)([a-z0-9][a-z0-9_-]{0,23})(?=\s*[:：])/i.exec(text);
+  if (!match) return null;
+  const start = match[1].length;
+  return { id: normalizeId(match[2]), start, end: start + match[2].length };
+}
+
 function normalizeKeywordText(text) {
   return String(text || "")
     .replace(/([\u3400-\u9fff])\s+(?=[\u3400-\u9fff])/g, "$1")
@@ -173,6 +180,10 @@ function getContextAuthorId(app, context = {}) {
     const column = authorColumn || fallbackAuthorColumn(chars.length);
     return getArticleAuthorId(text, column);
   } else if (state === PAGE_STATE.READING) {
+    const pushAuthor = getPushAuthor(text);
+    if (pushAuthor && col >= pushAuthor.start && col < pushAuthor.end) {
+      return pushAuthor.id;
+    }
     const match = text.match(/^\s*作\s*者\s*[:：]?\s*([a-z0-9][a-z0-9_-]{0,23})/i);
     if (match) {
       const start = match.index + match[0].lastIndexOf(match[1]);
@@ -213,7 +224,7 @@ function blankRow(row, label = "") {
   return copy;
 }
 
-function blankArticleRowWithBlockedId(row, authorStart) {
+function blankRowWithBlockedId(row, authorStart) {
   const copy = blankRow(row);
   const marker = "[Blocked]";
   for (let index = 0; index < marker.length && authorStart + index < copy.length; index += 1) {
@@ -495,12 +506,17 @@ export class Blacklist extends PluginBase {
         const column = authorColumn || fallbackAuthorColumn(text.length);
         author = getArticleAuthor(text, column);
         if (author?.id && this.isAllowlisted(author.id)) return row;
+      } else if (state === PAGE_STATE.READING) {
+        author = getPushAuthor(text);
+        if (author?.id && this.isAllowlisted(author.id)) return row;
       }
       const hasKeyword = rules.some((rule) => rule.type === "keyword" && searchableText.includes(normalizeKeywordText(rule.value)));
       const blockedAuthor = Boolean(author?.id && this.matchesId(author.id));
       if (!hasKeyword && !blockedAuthor) return row;
       changed = true;
-      if (author) return blankArticleRowWithBlockedId(row, author.start);
+      if (author && (blockedAuthor || isList)) {
+        return blankRowWithBlockedId(row, author.start);
+      }
       return blankRow(row);
     });
     return changed ? result : lines;
