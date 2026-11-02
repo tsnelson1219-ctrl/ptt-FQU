@@ -41,10 +41,12 @@ for (const path of [
   await rm(path, { recursive: true, force: true });
 }
 
-const commitHash = execFileSync("git", ["rev-parse", "--short", "HEAD"], {
-  cwd: root,
-  encoding: "utf8",
-}).trim();
+const commitHash =
+  process.env.COMMIT_HASH ||
+  execFileSync("git", ["rev-parse", "--short", "HEAD"], {
+    cwd: root,
+    encoding: "utf8",
+  }).trim();
 const build = spawnSync(
   process.execPath,
   [resolve(root, "node_modules/vite/bin/vite.js"), "build"],
