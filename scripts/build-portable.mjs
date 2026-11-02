@@ -90,5 +90,5 @@ await writeFile(
 
 console.log(`Portable package staged at: ${stage}`);
 console.log(
-  `Create the ZIP with: Compress-Archive -Path '${stage}\\*' -DestinationPath '${archive}' -Force`
+  `Create the ZIP with: Compress-Archive -Path '${stage}' -DestinationPath '${archive}' -Force`
 );
