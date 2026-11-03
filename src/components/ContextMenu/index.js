@@ -47,6 +47,7 @@ const initialState = {
   selEnabled: false,
   // --- Modal state ---
   showsSettings: false,
+  settingsTabKey: "general",
 };
 
 export class ContextMenu extends React.Component {
@@ -128,6 +129,7 @@ export class ContextMenu extends React.Component {
     const { app } = this.props;
 
     if (app) {
+      app.openSettings = this.openSettings;
       app.openContextMenu = (x, y) => {
         if (!this.isInstanceActive()) return;
         this.showMenuAt(x, y);
@@ -295,6 +297,9 @@ export class ContextMenu extends React.Component {
   componentWillUnmount() {
     this._isMounted = false;
     const { app } = this.props;
+    if (app && app.openSettings === this.openSettings) {
+      app.openSettings = null;
+    }
     if (app && app.openContextMenu) {
       app.openContextMenu = null;
     }
@@ -522,15 +527,23 @@ export class ContextMenu extends React.Component {
     this.setState(initialState);
   };
 
-  handleSettingsClick = (event) => {
-    event.stopPropagation();
+  openSettings = (settingsTabKey = "general") => {
+    if (!this.isInstanceActive()) return;
     const { app } = this.props;
-    app.contextMenuShown = false;
-    app.modalShown = true;
+    if (app) {
+      app.contextMenuShown = false;
+      app.modalShown = true;
+    }
     this.setState({
       ...initialState,
       showsSettings: true,
+      settingsTabKey,
     });
+  };
+
+  handleSettingsClick = (event) => {
+    event.stopPropagation();
+    this.openSettings("general");
   };
 
   handlePrefSave = (values) => {
@@ -556,6 +569,7 @@ export class ContextMenu extends React.Component {
       selEnabled,
       selectedText,
       showsSettings,
+      settingsTabKey,
       isTouchDevice,
     } = this.state;
     const { app } = this.props;
@@ -650,6 +664,7 @@ export class ContextMenu extends React.Component {
         <PrefModal
           app={app}
           show={showsSettings}
+          initialTab={settingsTabKey}
           isTouch={isTouchDevice}
           onSave={this.handlePrefSave}
           onReset={this.handlePrefReset}
