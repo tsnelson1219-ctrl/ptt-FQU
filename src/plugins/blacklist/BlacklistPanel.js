@@ -36,23 +36,50 @@ function formatDate(value) {
   }).format(date);
 }
 
-function downloadText(text, filename) {
-  const blob = new Blob(["\ufeff", text], { type: "text/plain;charset=utf-8" });
+async function downloadText(text, filename) {
+  const contents = `\ufeff${text}`;
+
+  // Chromium desktop exposes the native Save As dialog on secure origins,
+  // including localhost. Keep the legacy download fallback for other browsers.
+  if (typeof window !== "undefined" && typeof window.showSaveFilePicker === "function") {
+    let handle;
+    try {
+      handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [
+          {
+            description: "PTT-FQU 名單文字檔",
+            accept: { "text/plain": [".txt"] },
+          },
+        ],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(contents);
+      await writable.close();
+      return "saved";
+    } catch (error) {
+      if (error?.name === "AbortError") return "cancelled";
+      throw error;
+    }
+  }
+
+  const blob = new Blob([contents], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = filename;
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return "downloaded";
 }
 
-function exportRules(rules, filename) {
+async function exportRules(rules, filename) {
   const text = [
     "# PTT-FQU blacklist export",
     "# 格式：類型<TAB>內容",
     ...rules.map((rule) => `${rule.type.toUpperCase()}\t${rule.value}`),
   ].join("\n");
-  downloadText(`${text}\n`, filename);
+  return downloadText(`${text}\n`, filename);
 }
 
 export class BlacklistPanel extends React.Component {
@@ -148,7 +175,7 @@ export class BlacklistPanel extends React.Component {
     this.notify(`匯入 ${added} 筆`);
   };
 
-  exportSelected = () => {
+  exportSelected = async () => {
     const isWhitelist = this.state.activeTab === "whitelist";
     const selectedEvents = this.props.data.history
       .filter((event) => this.state.selected.has(Number(event.seq)) && !event.undone && (isWhitelist ? event.type === "allow-id" : event.type !== "allow-id"))
@@ -160,18 +187,31 @@ export class BlacklistPanel extends React.Component {
       this.notify(`選取項目沒有可匯出的${isWhitelist ? "白名單" : "黑名單"}內容`);
       return;
     }
-    exportRules(rows, isWhitelist ? "ptt-fqu-whitelist-history.txt" : "ptt-fqu-blacklist-history.txt");
-    this.notify(`已匯出 ${rows.length} 筆`);
+    try {
+      const result = await exportRules(rows, isWhitelist ? "ptt-fqu-whitelist-history.txt" : "ptt-fqu-blacklist-history.txt");
+      if (result === "cancelled") this.notify("已取消儲存");
+      else this.notify(`已匯出 ${rows.length} 筆`);
+    } catch (error) {
+      console.error("[PTT-FQU] 匯出名單失敗：", error);
+      this.notify("匯出失敗，請檢查檔案權限");
+    }
   };
 
-  exportCurrentList = () => {
+  exportCurrentList = async () => {
     const isWhitelist = this.state.activeTab === "whitelist";
     const rows = this.props.data.rules.filter((rule) =>
       isWhitelist
         ? rule.type === "allow-id"
         : rule.type !== "watch" && rule.type !== "allow-id"
     );
-    exportRules(rows, isWhitelist ? "ptt-fqu-whitelist.txt" : "ptt-fqu-blacklist.txt");
+    try {
+      const result = await exportRules(rows, isWhitelist ? "ptt-fqu-whitelist.txt" : "ptt-fqu-blacklist.txt");
+      if (result === "cancelled") this.notify("已取消儲存");
+      else this.notify(`已匯出 ${rows.length} 筆`);
+    } catch (error) {
+      console.error("[PTT-FQU] 匯出名單失敗：", error);
+      this.notify("匯出失敗，請檢查檔案權限");
+    }
   };
 
   renderLookup() {
@@ -198,7 +238,16 @@ export class BlacklistPanel extends React.Component {
                 const expanded = !state.expanded;
                 return { expanded, matchLimit: expanded ? matches.length : 8 };
               })}>{this.state.expanded ? "收合" : "展開瀏覽"}</button>
-              {this.state.expanded && <button type="button" className="PTTBlacklist__textButton" onClick={() => exportRules(matches, isWhitelist ? "ptt-fqu-whitelist-matches.txt" : "ptt-fqu-blacklist-matches.txt")}>匯出結果</button>}
+              {this.state.expanded && <button type="button" className="PTTBlacklist__textButton" onClick={async () => {
+                try {
+                  const result = await exportRules(matches, isWhitelist ? "ptt-fqu-whitelist-matches.txt" : "ptt-fqu-blacklist-matches.txt");
+                  if (result === "cancelled") this.notify("已取消儲存");
+                  else this.notify(`已匯出 ${matches.length} 筆`);
+                } catch (error) {
+                  console.error("[PTT-FQU] 匯出查詢結果失敗：", error);
+                  this.notify("匯出失敗，請檢查檔案權限");
+                }
+              }}>匯出結果</button>}
             </div>
           )}
         </div>
