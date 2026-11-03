@@ -60,7 +60,7 @@ const build = spawnSync(
     stdio: "inherit",
     env: {
       ...process.env,
-      SITE_URL: "ws://127.0.0.1:38120/bbs",
+      SITE_URL: "ws://[::1]:8081/bbs",
       COMMIT_HASH: commitHash,
     },
   }

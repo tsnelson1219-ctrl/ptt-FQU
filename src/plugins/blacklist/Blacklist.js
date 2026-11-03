@@ -2,77 +2,11 @@ import React from "preact/compat";
 import { PluginBase } from "../PluginBase.js";
 import { PAGE_STATE } from "../../js/sites/index.js";
 import BlacklistPanel from "./BlacklistPanel.js";
+import { BLACKLIST_RULE_TYPES as RULE_TYPES, makeEmptyBlacklistData as makeEmptyData, normalizeBlacklistData } from "./blacklist_data.js";
 
 const STORAGE_KEY = "ptt-fqu.blacklist.v1";
 const THEME_KEY = "ptt-fqu.blacklist.theme";
-const RULE_TYPES = new Set(["id", "idpart", "keyword", "watch", "allow-id"]);
 const ID_RE = /^[a-z0-9][a-z0-9_-]{0,23}$/i;
-
-const makeEmptyData = () => ({ rules: [], history: [], nextSeq: 1 });
-
-export function normalizeBlacklistData(raw, migratedAt = new Date().toISOString()) {
-  if (!raw || typeof raw !== "object") {
-    return { ...makeEmptyData(), migrated: false };
-  }
-
-  const rules = Array.isArray(raw.rules)
-    ? raw.rules
-        .filter((rule) => RULE_TYPES.has(rule?.type) && String(rule.value || "").trim())
-        .map((rule) => ({ ...rule, value: String(rule.value).trim() }))
-    : [];
-  const rawHistory = Array.isArray(raw.history) ? raw.history : [];
-  const history = rawHistory
-    .filter((event) => Number.isFinite(Number(event?.seq)) && !event?.undone)
-    .map((event) => ({ ...event, seq: Number(event.seq) }));
-  const maxStoredSeq = rawHistory.reduce(
-    (max, event) => Math.max(max, Number(event?.seq) || 0),
-    0
-  );
-  let nextSeq = Math.max(Number(raw.nextSeq) || 1, maxStoredSeq + 1);
-  let migrated = false;
-  const linkedHistory = new Set();
-
-  for (const rule of rules) {
-    const matchesRule = (event) =>
-      event.type === rule.type &&
-      String(event.value || "").toLowerCase() === rule.value.toLowerCase();
-    const assignedSeq = Number(rule.addedBySeq);
-    const assigned = history.find(
-      (event) => Number(event.seq) === assignedSeq && matchesRule(event)
-    );
-    const orphan = assigned || history.find(
-      (event) => !linkedHistory.has(Number(event.seq)) && matchesRule(event)
-    );
-
-    if (orphan) {
-      rule.addedBySeq = Number(orphan.seq);
-      linkedHistory.add(Number(orphan.seq));
-      continue;
-    }
-
-    const seq = nextSeq++;
-    rule.addedBySeq = seq;
-    history.push({
-      seq,
-      date: migratedAt,
-      type: rule.type,
-      value: rule.value,
-      note: rule.note || "既有名單",
-      undone: false,
-    });
-    linkedHistory.add(seq);
-    migrated = true;
-  }
-
-  nextSeq = Math.max(
-    nextSeq,
-    ...history.map((event) => Number(event.seq) + 1),
-    1
-  );
-  history.sort((a, b) => Number(a.seq) - Number(b.seq));
-
-  return { rules, history, nextSeq, migrated };
-}
 
 function readData() {
   try {

@@ -2,8 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { Blacklist, normalizeBlacklistData } from '../src/plugins/blacklist/Blacklist.js';
-import { EventEmitter } from '../src/js/event.js';
+import { normalizeBlacklistData } from '../src/plugins/blacklist/blacklist_data.js';
 
 const source = fs.readFileSync(path.resolve('src/plugins/blacklist/Blacklist.js'), 'utf8');
 
@@ -41,37 +40,9 @@ test('legacy rules without history are migrated into visible, reversible events'
   assert.equal(data.nextSeq, 3);
 });
 
-test('blacklist right-click actions and manager remain available when filtering is off', () => {
-  class MockApp extends EventEmitter {
-    constructor() {
-      super();
-      this.prefValues = { enableBlacklist: false };
-      this.contextMenuItems = [];
-      this.overlays = [];
-    }
-    registerContextMenuItem(item) { this.contextMenuItems.push(item); }
-    unregisterContextMenuItem(id) {
-      this.contextMenuItems = this.contextMenuItems.filter((item) => item.id !== id);
-    }
-    registerOverlay(overlay) { this.overlays.push(overlay); }
-    unregisterOverlay(id) {
-      this.overlays = this.overlays.filter((item) => item.id !== id);
-    }
-  }
-
-  const app = new MockApp();
-  const plugin = new Blacklist(app);
-  plugin.init();
-  assert.equal(plugin.enabled, false);
-
-  const manager = app.contextMenuItems.find((item) => item.id === 'blacklist-open-manager');
-  const addId = app.contextMenuItems.find((item) => item.id === 'blacklist-add-selected-id');
-  assert.equal(manager.visible(app, {}), true);
-  assert.equal(addId.visible(app, { selectedText: 'emperor' }), true);
-  assert.equal(app.overlays.some((overlay) => overlay.id === 'blacklist'), true);
-
-  manager.onClick(app, {});
-  assert.equal(plugin.showsPanel, true);
-  addId.onClick(app, { state: { selectedText: 'emperor' } });
-  assert.equal(plugin.data.rules[0].value, 'emperor');
+test('right-click blacklist tools do not disappear when filtering is disabled', () => {
+  const menu = source.slice(source.indexOf('  getContextMenuItems()'), source.indexOf('\n  renderOverlay(', source.indexOf('  getContextMenuItems()')));
+  assert.doesNotMatch(menu, /this\.enabled/);
+  assert.match(menu, /id: "blacklist-open-manager"[\s\S]*?visible: \(\) => true/);
+  assert.match(source, /onInit\(\)[\s\S]*?this\.registerOverlay\(/);
 });

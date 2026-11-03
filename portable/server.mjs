@@ -9,9 +9,9 @@ import { attachBbsProxy } from "../api/bbs.js";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const staticRoot = resolve(packageRoot, "dist");
-const host = "127.0.0.1";
-const port = 38120;
-const appUrl = `http://${host}:${port}/`;
+const host = "::1";
+const port = 8081;
+const appUrl = `http://[${host}]:${port}/`;
 
 // --- 記錄檔：無黑窗模式下，錯誤也能在 ptt-fqu.log 看到 ---
 const logFile = resolve(packageRoot, "ptt-fqu.log");

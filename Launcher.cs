@@ -9,9 +9,9 @@ namespace PttFqu
 {
     static class Program
     {
-        private const int Port = 38120;
-        private const string Host = "127.0.0.1";
-        private const string AppUrl = "http://127.0.0.1:38120/";
+        private const int Port = 8081;
+        private const string Host = "::1";
+        private const string AppUrl = "http://[::1]:8081/";
 
         [STAThread]
         static void Main()

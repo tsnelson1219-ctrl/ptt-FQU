@@ -31,6 +31,7 @@ jobs:
           test/blacklist.test.mjs
           test/blacklist_export.test.mjs
           test/quick_boards_input.test.mjs
+          test/portable_origin.test.mjs
           test/portable_browser_profile.test.mjs
       - name: Build production bundle
         run: npm run build
@@ -54,7 +55,7 @@ jobs:
       - name: Scan Windows Portable with Microsoft Defender
         shell: pwsh
         run: |
-          $portablePath = (Resolve-Path "work/PTT-FQU-3.1.5-portable").Path
+          $portablePath = (Resolve-Path "work/PTT-FQU-3.1.6-portable").Path
           Update-MpSignature
           Start-MpScan -ScanType CustomScan -ScanPath $portablePath
           Start-Sleep -Seconds 5
@@ -67,7 +68,7 @@ jobs:
           }
           $status = Get-MpComputerStatus
           @"
-          PTT-FQU 3.1.5 Portable
+          PTT-FQU 3.1.6 Portable
           Microsoft Defender: scan completed; no detections in this package.
           Signature version: $($status.AntivirusSignatureVersion)
           Scan time (UTC): $((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss'))
@@ -76,7 +77,7 @@ jobs:
       - name: Upload Windows Portable artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PTT-FQU-3.1.5-portable
+          name: PTT-FQU-3.1.6-portable
           path: work/
           if-no-files-found: error
           retention-days: 90
