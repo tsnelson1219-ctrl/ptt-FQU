@@ -728,6 +728,7 @@ export class PrefModal extends React.Component {
       this.setState({
         values: readValuesWithDefault(),
         expandedPluginId: null,
+        navActiveKey: this.props.initialTab || "general",
       });
     }
   }
