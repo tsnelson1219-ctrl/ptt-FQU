@@ -36,7 +36,7 @@ function formatDate(value) {
   }).format(date);
 }
 
-async async function downloadText(text, filename) {
+async function downloadText(text, filename) {
   const contents = `\ufeff${text}`;
 
   // Prefer the native Save As dialog where the browser supports it.
