@@ -7,6 +7,7 @@ const source = fs.readFileSync(path.resolve('src/plugins/blacklist/BlacklistPane
 
 test('blacklist exports offer a native Save As location picker when supported', () => {
   assert.match(source, /async function downloadText\(text, filename\)/);
+  assert.doesNotMatch(source, /async\s+async\s+function\s+downloadText/);
   assert.match(source, /window\.showSaveFilePicker\(/);
   assert.match(source, /suggestedName: filename/);
   assert.match(source, /await writable\.write\(contents\)/);
