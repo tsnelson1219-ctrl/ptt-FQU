@@ -289,10 +289,6 @@ export class Blacklist extends PluginBase {
               openSettingsTab("blacklist");
               return;
             }
-            if (typeof app?.openSettings === "function") {
-              app.openSettings("blacklist");
-              return;
-            }
             plugin?.openPanel?.();
           },
         },
@@ -347,6 +343,11 @@ export class Blacklist extends PluginBase {
   }
 
   openPanel() {
+    if (typeof this.app?.openSettings === "function") {
+      if (this.showsPanel) this.closePanel();
+      this.app.openSettings("blacklist");
+      return;
+    }
     this.showsPanel = true;
     this.app?.emit?.("term:overlay:update");
   }
@@ -360,6 +361,25 @@ export class Blacklist extends PluginBase {
   getContextMenuItems() {
     return [
       {
+        id: "blacklist-unblock-blocked-id",
+        order: 1,
+        showWhenSelected: true,
+        showWhenClicked: true,
+        showInNormal: false,
+        label: (app, context = {}) => {
+          const info = this.getContextBlockedInfo(app, context);
+          if (!info) return "解除封鎖";
+          const ruleType = info.rule.type === "id" ? "作者 ID" : "ID 含字串";
+          return `解除封鎖 ${info.id}（${ruleType}：${info.rule.value}）`;
+        },
+        visible: (app, context = {}) =>
+          Boolean(this.getContextBlockedInfo(app, context)),
+        onClick: (app, { state } = {}) => {
+          const info = this.getContextBlockedInfo(app, state || {});
+          if (info) this.undoEvent(info.rule.addedBySeq);
+        },
+      },
+      {
         id: "blacklist-add-selected-id",
         order: 2,
         showWhenSelected: true,
@@ -369,7 +389,10 @@ export class Blacklist extends PluginBase {
           const id = getContextAuthorId(app, context);
           return id ? `加入黑名單：${id}` : "加入黑名單";
         },
-        visible: (app, context = {}) => Boolean(getContextAuthorId(app, context)),
+        visible: (app, context = {}) => {
+          const id = getContextAuthorId(app, context);
+          return Boolean(id && !this.getBlockingRule(id));
+        },
         onClick: (app, { state } = {}) => {
           const id = getContextAuthorId(app, state || {});
           if (id) this.addRule("id", id, "右鍵加入");
@@ -382,13 +405,7 @@ export class Blacklist extends PluginBase {
         showInNormal: true,
         label: "黑／白名單管理…",
         visible: () => true,
-        onClick: (app) => {
-          if (typeof app?.openSettings === "function") {
-            app.openSettings("blacklist");
-            return;
-          }
-          this.openPanel();
-        },
+        onClick: () => this.openPanel(),
       },
       {
         id: "whitelist-add-selected-id",
@@ -430,6 +447,10 @@ export class Blacklist extends PluginBase {
   }
 
   renderOverlay({ app } = {}) {
+    if (app?.modalShown) {
+      this.showsPanel = false;
+      return null;
+    }
     return React.createElement(BlacklistPanel, {
       app: app || this.app,
       plugin: this,
@@ -501,11 +522,52 @@ export class Blacklist extends PluginBase {
   }
 
   matchesId(id) {
+    return Boolean(this.getBlockingRule(id));
+  }
+
+  getBlockingRule(id) {
     const value = String(id || "").toLowerCase();
-    return this.data.rules.some((rule) =>
-      (rule.type === "id" && rule.value.toLowerCase() === value) ||
-      (rule.type === "idpart" && value.includes(rule.value.toLowerCase()))
-    );
+    return this.data.rules
+      .filter((rule) =>
+        (rule.type === "id" && rule.value.toLowerCase() === value) ||
+        (rule.type === "idpart" && value.includes(rule.value.toLowerCase()))
+      )
+      .sort((a, b) => {
+        if (a.type !== b.type) return a.type === "id" ? -1 : 1;
+        return b.value.length - a.value.length;
+      })[0] || null;
+  }
+
+  getContextBlockedInfo(app, context = {}) {
+    let id = getContextAuthorId(app, context);
+
+    // The filter paints a blocked article body as [Blocked]. Resolve its
+    // author from the source buffer so the row can be unblocked by context menu.
+    if (!id && app?.site?.pageState === PAGE_STATE.READING) {
+      const position = Number.isFinite(context.clickRow) && Number.isFinite(context.clickCol)
+        ? { row: context.clickRow, col: context.clickCol }
+        : Number.isFinite(context.clickX) && Number.isFinite(context.clickY)
+        ? app?.clientToPos?.(context.clickX, context.clickY)
+        : null;
+      const clickedRow = Number(position?.row);
+      const texts = (app?.buf?.lines || []).map(rowText);
+      const authorRow = texts.findIndex((text) =>
+        /^\s*作\s*者\s*[:：]?\s*([a-z0-9][a-z0-9_-]{0,23})/i.test(text)
+      );
+      if (Number.isFinite(clickedRow) && authorRow >= 0) {
+        const match = texts[authorRow].match(
+          /^\s*作\s*者\s*[:：]?\s*([a-z0-9][a-z0-9_-]{0,23})/i
+        );
+        const lastContentRow = Math.max(authorRow + 1, texts.length - 2);
+        if (match && clickedRow > authorRow && clickedRow < lastContentRow) {
+          id = normalizeId(match[1]);
+        }
+      }
+    }
+
+    if (!id || this.isAllowlisted(id)) return null;
+    const rule = this.getBlockingRule(id);
+    return rule ? { id, rule } : null;
   }
 
   isAllowlisted(id) {
