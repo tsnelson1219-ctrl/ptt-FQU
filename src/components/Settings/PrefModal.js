@@ -1000,6 +1000,11 @@ export class PrefModal extends React.Component {
                   {_("options_plugins")}
                 </a>
               </li>
+              <li className={navActiveKey === "blacklist" ? "active" : ""}>
+                <a href="#" onClick={this.handleNavSelect("blacklist")}>
+                  黑／白名單
+                </a>
+              </li>
               <li className={navActiveKey === "advanced" ? "active" : ""}>
                 <a href="#" onClick={this.handleNavSelect("advanced")}>
                   {_("options_advanced")}
@@ -2013,6 +2018,84 @@ export class PrefModal extends React.Component {
                     );
                   })}
                 </div>
+                </div>
+              </fieldset>
+            )}
+            {navActiveKey === "blacklist" && (
+              <fieldset className="PrefModal__Grid__Col--right__Fieldset">
+                <TabLegend
+                  title="黑／白名單"
+                  onCloseClick={this.handleCloseClick}
+                />
+                <div className="PrefModal__TabBody">
+                  <div className="form-group">
+                    <label className="control-label">
+                      啟用黑名單過濾
+                    </label>
+                    <label className="PrefModal__MacSwitchLabel">
+                      <input
+                        type="checkbox"
+                        className="PrefModal__MacSwitchInput"
+                        name="enableBlacklist"
+                        checked={values.enableBlacklist !== false}
+                        onChange={this.handleCheckboxChange}
+                      />
+                      <span className="PrefModal__MacSwitchSlider" />
+                    </label>
+                    <p className="help-block">
+                      開啟後，黑名單中的使用者 ID、關鍵字將被過濾。
+                    </p>
+                  </div>
+                  <div className="form-group">
+                    <label className="control-label">
+                      目前規則統計
+                    </label>
+                    <div style={{ lineHeight: "1.8", fontSize: "14px" }}>
+                      {(() => {
+                        const plugin = this.props.app?.getPlugin?.("blacklist");
+                        const rules = plugin?.data?.rules || [];
+                        const blackIds = rules.filter(r => r.type === "id").length;
+                        const idParts = rules.filter(r => r.type === "idpart").length;
+                        const keywords = rules.filter(r => r.type === "keyword").length;
+                        const whiteIds = rules.filter(r => r.type === "allow-id").length;
+                        const watchIds = rules.filter(r => r.type === "watch").length;
+                        return (
+                          <div>
+                            <div>🚫 黑名單 ID：<strong>{blackIds}</strong> 筆</div>
+                            <div>🔍 ID 片段：<strong>{idParts}</strong> 筆</div>
+                            <div>📝 關鍵字：<strong>{keywords}</strong> 筆</div>
+                            <div>✅ 白名單 ID：<strong>{whiteIds}</strong> 筆</div>
+                            <div>👁️ 觀察名單：<strong>{watchIds}</strong> 筆</div>
+                            <div style={{ marginTop: "4px", color: "#888" }}>
+                              共 <strong>{rules.length}</strong> 條規則
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <button
+                      type="button"
+                      className="btn btn-default"
+                      style={{ marginTop: "8px" }}
+                      onClick={() => {
+                        const plugin = this.props.app?.getPlugin?.("blacklist");
+                        if (plugin?.openPanel) {
+                          this.handleCloseClick();
+                          setTimeout(() => plugin.openPanel(), 200);
+                        }
+                      }}
+                    >
+                      開啟黑名單管理面板
+                    </button>
+                  </div>
+                  <div className="form-group">
+                    <p className="help-block" style={{ marginTop: "12px" }}>
+                      <strong>提示：</strong>你也可以在 PTT 畫面上對使用者 ID
+                      按右鍵，透過右鍵選單快速加入黑名單或白名單。
+                    </p>
+                  </div>
                 </div>
               </fieldset>
             )}
