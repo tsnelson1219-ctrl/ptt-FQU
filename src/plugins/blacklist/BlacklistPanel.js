@@ -192,7 +192,8 @@ export class BlacklistPanel extends React.Component {
     try {
       const result = await exportRules(rows, isWhitelist ? "ptt-fqu-whitelist-history.txt" : "ptt-fqu-blacklist-history.txt");
       if (result === "cancelled") this.notify("已取消儲存");
-      else this.notify(`已匯出 ${rows.length} 筆`);
+      else if (result === "downloaded") this.notify("已交由瀏覽器下載；儲存位置依瀏覽器設定");
+      else this.notify(`已儲存 ${rows.length} 筆`);
     } catch (error) {
       console.error("[PTT-FQU] 匯出名單失敗：", error);
       this.notify("匯出失敗，請檢查檔案權限");
@@ -209,7 +210,8 @@ export class BlacklistPanel extends React.Component {
     try {
       const result = await exportRules(rows, isWhitelist ? "ptt-fqu-whitelist.txt" : "ptt-fqu-blacklist.txt");
       if (result === "cancelled") this.notify("已取消儲存");
-      else this.notify(`已匯出 ${rows.length} 筆`);
+      else if (result === "downloaded") this.notify("已交由瀏覽器下載；儲存位置依瀏覽器設定");
+      else this.notify(`已儲存 ${rows.length} 筆`);
     } catch (error) {
       console.error("[PTT-FQU] 匯出名單失敗：", error);
       this.notify("匯出失敗，請檢查檔案權限");
@@ -244,7 +246,8 @@ export class BlacklistPanel extends React.Component {
                 try {
                   const result = await exportRules(matches, isWhitelist ? "ptt-fqu-whitelist-matches.txt" : "ptt-fqu-blacklist-matches.txt");
                   if (result === "cancelled") this.notify("已取消儲存");
-                  else this.notify(`已匯出 ${matches.length} 筆`);
+                  else if (result === "downloaded") this.notify("已交由瀏覽器下載；儲存位置依瀏覽器設定");
+                  else this.notify(`已儲存 ${matches.length} 筆`);
                 } catch (error) {
                   console.error("[PTT-FQU] 匯出查詢結果失敗：", error);
                   this.notify("匯出失敗，請檢查檔案權限");
