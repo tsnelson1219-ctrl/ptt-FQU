@@ -171,7 +171,11 @@ function getContextAuthorId(app, context = {}) {
   let tokenRange = null;
 
   const authorColumn = findArticleAuthorColumn(app?.buf?.lines);
-  if ((state === PAGE_STATE.LIST || state === PAGE_STATE.MAPLE_LIST || authorColumn) && isArticleListRow(text)) {
+  if (
+    (state === PAGE_STATE.LIST || state === PAGE_STATE.MAPLE_LIST || authorColumn) &&
+    isArticleListRow(text) &&
+    hasArticleAuthor(text, authorColumn)
+  ) {
     const column = authorColumn || fallbackAuthorColumn(chars.length);
     return getArticleAuthorId(text, column);
   } else if (state === PAGE_STATE.READING) {
@@ -241,6 +245,13 @@ function isArticleListRow(text) {
   return (
     /^\s*(?:[>+*●◆]\s*)?(?:\[\s*\d+\s*\]|\d{1,6}[A-Za-z*]?)(?:\s*[+~\-!]\s*\d{0,3})?\s+/.test(text) ||
     Boolean(dateAndAuthor && dateAndAuthor.index <= 40)
+  );
+}
+
+function hasArticleAuthor(text, authorColumn) {
+  return Boolean(
+    authorColumn ||
+    /\d{1,2}\/\d{1,2}\s+[a-z0-9][a-z0-9_-]{0,23}(?=\s|$)/i.test(text)
   );
 }
 
@@ -586,23 +597,32 @@ export class Blacklist extends PluginBase {
     const isList = state === PAGE_STATE.LIST || state === PAGE_STATE.MAPLE_LIST || Boolean(authorColumn);
     const texts = lines.map(rowText);
 
-    if (state === PAGE_STATE.READING) {
-      const authorRow = texts.findIndex((text) => /^\s*作\s*者\s*[:：]?\s*([a-z0-9][a-z0-9_-]{0,23})/i.test(text));
-      if (authorRow >= 0) {
-        const match = texts[authorRow].match(/^\s*作\s*者\s*[:：]?\s*([a-z0-9][a-z0-9_-]{0,23})/i);
-        // The article author's whitelist exempts that author only. Push rows
-        // and keyword rules below must still be evaluated independently.
-        if (match && !this.isAllowlisted(match[1]) && this.matchesId(match[1])) {
-          const result = lines.slice();
-          const lastContentRow = Math.max(authorRow + 1, result.length - 2);
-          for (let row = authorRow + 1; row < lastContentRow; row += 1) {
-            result[row] = blankRow(lines[row]);
-          }
-          if (authorRow + 1 < lastContentRow) {
-            result[authorRow + 1] = blankRow(lines[authorRow + 1], `PTT-FQU: hidden author ${match[1]}`);
-          }
-          return result;
+    const readingAuthorRow = state === PAGE_STATE.READING
+      ? texts.findIndex((text) => /^\s*作\s*者\s*[:：]?\s*([a-z0-9][a-z0-9_-]{0,23})/i.test(text))
+      : -1;
+    const readingHeaderSeparator = readingAuthorRow >= 0
+      ? texts.findIndex((text, index) => index > readingAuthorRow && !text.trim())
+      : -1;
+    const readingContentStart = readingAuthorRow >= 0
+      ? readingHeaderSeparator >= 0 ? readingHeaderSeparator + 1 : readingAuthorRow + 4
+      : 0;
+    const readingContentEnd = Math.max(readingContentStart, texts.length - 2);
+
+    if (readingAuthorRow >= 0) {
+      const authorRow = readingAuthorRow;
+      const match = texts[authorRow].match(/^\s*作\s*者\s*[:：]?\s*([a-z0-9][a-z0-9_-]{0,23})/i);
+      // The article author's whitelist exempts that author only. Push rows
+      // and keyword rules below must still be evaluated independently.
+      if (match && !this.isAllowlisted(match[1]) && this.matchesId(match[1])) {
+        const result = lines.slice();
+        const lastContentRow = Math.max(authorRow + 1, result.length - 2);
+        for (let row = authorRow + 1; row < lastContentRow; row += 1) {
+          result[row] = blankRow(lines[row]);
         }
+        if (authorRow + 1 < lastContentRow) {
+          result[authorRow + 1] = blankRow(lines[authorRow + 1], `PTT-FQU: hidden author ${match[1]}`);
+        }
+        return result;
       }
     }
 
@@ -611,14 +631,22 @@ export class Blacklist extends PluginBase {
       const text = texts[index];
       const searchableText = normalizeKeywordText(text);
       let author = null;
-      if (isList && isArticleListRow(text)) {
+      const isArticleRow = isList && isArticleListRow(text) && hasArticleAuthor(text, authorColumn);
+      if (isArticleRow) {
         const column = authorColumn || fallbackAuthorColumn(text.length);
         author = getArticleAuthor(text, column);
       } else if (state === PAGE_STATE.READING) {
         author = getPushAuthor(text);
       }
       const authorAllowlisted = Boolean(author?.id && this.isAllowlisted(author.id));
-      const hasKeyword = rules.some((rule) => rule.type === "keyword" && searchableText.includes(normalizeKeywordText(rule.value)));
+      const isArticleContentRow = isArticleRow || (
+        state === PAGE_STATE.READING &&
+        index >= readingContentStart &&
+        index < readingContentEnd
+      );
+      const hasKeyword = isArticleContentRow && rules.some((rule) =>
+        rule.type === "keyword" && searchableText.includes(normalizeKeywordText(rule.value))
+      );
       const blockedAuthor = Boolean(author?.id && !authorAllowlisted && this.matchesId(author.id));
       if (!hasKeyword && !blockedAuthor) return row;
       changed = true;

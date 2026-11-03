@@ -141,8 +141,8 @@ const server = createServer(async (request, response) => {
         contentTypes[extname(filePath).toLowerCase()] ||
         "application/octet-stream",
       "X-Content-Type-Options": "nosniff",
-      "Cache-Control": filePath.endsWith("index.html")
-        ? "no-cache"
+      "Cache-Control": ["index.html", "manifest.webmanifest", "sw.js", "version.json"].includes(relativePath)
+        ? "no-cache, no-store, must-revalidate"
         : "public, max-age=3600",
     });
     response.end(request.method === "HEAD" ? undefined : body);

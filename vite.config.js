@@ -54,7 +54,7 @@ export default defineConfig(({ mode, command }) => {
     name: appTitle,
     short_name: appShortName,
     description: appDescription,
-    start_url: './',
+    start_url: `./?build=${encodeURIComponent(getCommitHash() || pkg.version)}`,
     scope: './',
     display: 'standalone',
     display_override: ['window-controls-overlay', 'standalone'],
@@ -62,7 +62,7 @@ export default defineConfig(({ mode, command }) => {
     theme_color: '#1a1a1a',
     orientation: 'any',
     launch_handler: {
-      client_mode: 'focus-existing',
+      client_mode: 'navigate-existing',
     },
     icons: [
       {
