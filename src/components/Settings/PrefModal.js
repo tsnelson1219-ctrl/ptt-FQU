@@ -943,14 +943,43 @@ export class PrefModal extends React.Component {
   };
 
   getPlugins() {
-    const { app } = this.props;
-    return getAvailablePlugins(app);
+    try {
+      const { app } = this.props;
+      const plugins = getAvailablePlugins(app);
+      return Array.isArray(plugins) ? plugins : [];
+    } catch (error) {
+      console.error("[PTT-FQU] 無法載入插件設定清單：", error);
+      return [];
+    }
+  }
+
+  getBlacklistStats() {
+    try {
+      const plugin = this.props.app?.getPlugin?.("blacklist");
+      const rules = Array.isArray(plugin?.data?.rules) ? plugin.data.rules : [];
+      return {
+        rules,
+        blackIds: rules.filter((rule) => rule?.type === "id").length,
+        idParts: rules.filter((rule) => rule?.type === "idpart").length,
+        keywords: rules.filter((rule) => rule?.type === "keyword").length,
+        whiteIds: rules.filter((rule) => rule?.type === "allow-id").length,
+        watchIds: rules.filter((rule) => rule?.type === "watch").length,
+        available: Boolean(plugin),
+      };
+    } catch (error) {
+      console.error("[PTT-FQU] 無法讀取黑白名單統計：", error);
+      return {
+        rules: [], blackIds: 0, idParts: 0, keywords: 0,
+        whiteIds: 0, watchIds: 0, available: false,
+      };
+    }
   }
 
   render() {
     const { show } = this.props;
     const { navActiveKey, values } = this.state;
     const plugins = this.getPlugins();
+    const blacklistStats = this.getBlacklistStats();
     const isTouch = Boolean(
       this.props.isTouch !== undefined
         ? this.props.isTouch
@@ -2029,11 +2058,12 @@ export class PrefModal extends React.Component {
                 />
                 <div className="PrefModal__TabBody">
                   <div className="form-group">
-                    <label className="control-label">
+                    <label className="control-label" htmlFor="enableBlacklistInput">
                       啟用黑名單過濾
                     </label>
                     <label className="PrefModal__MacSwitchLabel">
                       <input
+                        id="enableBlacklistInput"
                         type="checkbox"
                         className="PrefModal__MacSwitchInput"
                         name="enableBlacklist"
@@ -2047,31 +2077,22 @@ export class PrefModal extends React.Component {
                     </p>
                   </div>
                   <div className="form-group">
-                    <label className="control-label">
-                      目前規則統計
-                    </label>
+                    <div className="control-label">目前規則統計</div>
                     <div style={{ lineHeight: "1.8", fontSize: "14px" }}>
-                      {(() => {
-                        const plugin = this.props.app?.getPlugin?.("blacklist");
-                        const rules = plugin?.data?.rules || [];
-                        const blackIds = rules.filter(r => r.type === "id").length;
-                        const idParts = rules.filter(r => r.type === "idpart").length;
-                        const keywords = rules.filter(r => r.type === "keyword").length;
-                        const whiteIds = rules.filter(r => r.type === "allow-id").length;
-                        const watchIds = rules.filter(r => r.type === "watch").length;
-                        return (
-                          <div>
-                            <div>🚫 黑名單 ID：<strong>{blackIds}</strong> 筆</div>
-                            <div>🔍 ID 片段：<strong>{idParts}</strong> 筆</div>
-                            <div>📝 關鍵字：<strong>{keywords}</strong> 筆</div>
-                            <div>✅ 白名單 ID：<strong>{whiteIds}</strong> 筆</div>
-                            <div>👁️ 觀察名單：<strong>{watchIds}</strong> 筆</div>
-                            <div style={{ marginTop: "4px", color: "#888" }}>
-                              共 <strong>{rules.length}</strong> 條規則
-                            </div>
+                      {blacklistStats.available ? (
+                        <div>
+                          <div>🚫 黑名單 ID：<strong>{blacklistStats.blackIds}</strong> 筆</div>
+                          <div>🔍 ID 片段：<strong>{blacklistStats.idParts}</strong> 筆</div>
+                          <div>📝 關鍵字：<strong>{blacklistStats.keywords}</strong> 筆</div>
+                          <div>✅ 白名單 ID：<strong>{blacklistStats.whiteIds}</strong> 筆</div>
+                          <div>👁️ 觀察名單：<strong>{blacklistStats.watchIds}</strong> 筆</div>
+                          <div style={{ marginTop: "4px", color: "#888" }}>
+                            共 <strong>{blacklistStats.rules.length}</strong> 條規則
                           </div>
-                        );
-                      })()}
+                        </div>
+                      ) : (
+                        <div role="status">目前無法讀取名單資料，過濾功能仍可正常運作。</div>
+                      )}
                     </div>
                   </div>
                   <div className="form-group">

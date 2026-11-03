@@ -181,7 +181,8 @@ function getContextAuthorId(app, context = {}) {
     return getArticleAuthorId(text, column);
   } else if (state === PAGE_STATE.READING) {
     const pushAuthor = getPushAuthor(text);
-    if (pushAuthor && col >= pushAuthor.start && col < pushAuthor.end) {
+    // A right-click anywhere on a push row should identify its author.
+    if (pushAuthor) {
       return pushAuthor.id;
     }
     const match = text.match(/^\s*作\s*者\s*[:：]?\s*([a-z0-9][a-z0-9_-]{0,23})/i);
@@ -509,8 +510,9 @@ export class Blacklist extends PluginBase {
       const authorRow = texts.findIndex((text) => /^\s*作\s*者\s*[:：]?\s*([a-z0-9][a-z0-9_-]{0,23})/i.test(text));
       if (authorRow >= 0) {
         const match = texts[authorRow].match(/^\s*作\s*者\s*[:：]?\s*([a-z0-9][a-z0-9_-]{0,23})/i);
-        if (match && this.isAllowlisted(match[1])) return lines;
-        if (match && this.matchesId(match[1])) {
+        // The article author's whitelist exempts that author only. Push rows
+        // and keyword rules below must still be evaluated independently.
+        if (match && !this.isAllowlisted(match[1]) && this.matchesId(match[1])) {
           const result = lines.slice();
           const lastContentRow = Math.max(authorRow + 1, result.length - 2);
           for (let row = authorRow + 1; row < lastContentRow; row += 1) {
@@ -532,13 +534,12 @@ export class Blacklist extends PluginBase {
       if (isList && isArticleListRow(text)) {
         const column = authorColumn || fallbackAuthorColumn(text.length);
         author = getArticleAuthor(text, column);
-        if (author?.id && this.isAllowlisted(author.id)) return row;
       } else if (state === PAGE_STATE.READING) {
         author = getPushAuthor(text);
-        if (author?.id && this.isAllowlisted(author.id)) return row;
       }
+      const authorAllowlisted = Boolean(author?.id && this.isAllowlisted(author.id));
       const hasKeyword = rules.some((rule) => rule.type === "keyword" && searchableText.includes(normalizeKeywordText(rule.value)));
-      const blockedAuthor = Boolean(author?.id && this.matchesId(author.id));
+      const blockedAuthor = Boolean(author?.id && !authorAllowlisted && this.matchesId(author.id));
       if (!hasKeyword && !blockedAuthor) return row;
       changed = true;
       if (author && (blockedAuthor || isList)) {

@@ -50,10 +50,8 @@ const contentTypes = {
 };
 
 function getBrowserAppCommand(url) {
-  // Use a dedicated user-data-dir so Chrome opens a truly independent window
-  // (with its own minimize / maximize / close buttons) that never merges into
-  // an existing Chrome session and never touches the user's regular profile.
-  const userDataDir = resolve(packageRoot, ".ptt-fqu-chrome-profile");
+  // Reuse the user's normal Chrome / Edge profile so existing sign-ins and
+  // browser sessions remain available when links open from the PTT window.
 
   const chromeCandidates = [
     process.env["PROGRAMFILES"] + "\\Google\\Chrome\\Application\\chrome.exe",
@@ -66,7 +64,6 @@ function getBrowserAppCommand(url) {
         bin: p,
         args: [
           `--app=${url}`,
-          `--user-data-dir=${userDataDir}`,
           "--window-size=1080,750",
           "--no-first-run",
           "--no-default-browser-check",
@@ -85,7 +82,6 @@ function getBrowserAppCommand(url) {
         bin: p,
         args: [
           `--app=${url}`,
-          `--user-data-dir=${userDataDir}`,
           "--window-size=1080,750",
           "--no-first-run",
           "--no-default-browser-check",
