@@ -3,6 +3,7 @@ import React from "react";
 import NativeDialog from "../NativeDialog";
 import { _, setLocale } from "../../js/i18n";
 import { FontManager } from "./FontManager";
+import BlacklistPanel from "../../plugins/blacklist/BlacklistPanel.js";
 import "./PrefModal.css";
 import {
   DEFAULT_PREFS,
@@ -985,33 +986,11 @@ export class PrefModal extends React.Component {
     }
   }
 
-  getBlacklistStats() {
-    try {
-      const plugin = this.props.app?.getPlugin?.("blacklist");
-      const rules = Array.isArray(plugin?.data?.rules) ? plugin.data.rules : [];
-      return {
-        rules,
-        blackIds: rules.filter((rule) => rule?.type === "id").length,
-        idParts: rules.filter((rule) => rule?.type === "idpart").length,
-        keywords: rules.filter((rule) => rule?.type === "keyword").length,
-        whiteIds: rules.filter((rule) => rule?.type === "allow-id").length,
-        watchIds: rules.filter((rule) => rule?.type === "watch").length,
-        available: Boolean(plugin),
-      };
-    } catch (error) {
-      console.error("[PTT-FQU] 無法讀取黑白名單統計：", error);
-      return {
-        rules: [], blackIds: 0, idParts: 0, keywords: 0,
-        whiteIds: 0, watchIds: 0, available: false,
-      };
-    }
-  }
 
   render() {
     const { show } = this.props;
     const { navActiveKey, values } = this.state;
     const plugins = this.getPlugins();
-    const blacklistStats = this.getBlacklistStats();
     const isTouch = Boolean(
       this.props.isTouch !== undefined
         ? this.props.isTouch
@@ -2089,8 +2068,8 @@ export class PrefModal extends React.Component {
                   title="黑／白名單"
                   onCloseClick={this.handleCloseClick}
                 />
-                <div className="PrefModal__TabBody">
-                  <div className="form-group">
+                <div className="PrefModal__TabBody PrefModal__TabBody--blacklist">
+                  <div className="form-group PrefModal__BlacklistToggle">
                     <label className="control-label" htmlFor="enableBlacklistInput">
                       啟用黑名單過濾
                     </label>
@@ -2105,51 +2084,21 @@ export class PrefModal extends React.Component {
                       />
                       <span className="PrefModal__MacSwitchSlider" />
                     </label>
-                    <p className="help-block">
-                      開啟後，黑名單中的使用者 ID、關鍵字將被過濾。
-                    </p>
                   </div>
-                  <div className="form-group">
-                    <div className="control-label">目前規則統計</div>
-                    <div style={{ lineHeight: "1.8", fontSize: "14px" }}>
-                      {blacklistStats.available ? (
-                        <div>
-                          <div>🚫 黑名單 ID：<strong>{blacklistStats.blackIds}</strong> 筆</div>
-                          <div>🔍 ID 片段：<strong>{blacklistStats.idParts}</strong> 筆</div>
-                          <div>📝 關鍵字：<strong>{blacklistStats.keywords}</strong> 筆</div>
-                          <div>✅ 白名單 ID：<strong>{blacklistStats.whiteIds}</strong> 筆</div>
-                          <div>👁️ 觀察名單：<strong>{blacklistStats.watchIds}</strong> 筆</div>
-                          <div style={{ marginTop: "4px", color: "#888" }}>
-                            共 <strong>{blacklistStats.rules.length}</strong> 條規則
-                          </div>
-                        </div>
-                      ) : (
-                        <div role="status">目前無法讀取名單資料，過濾功能仍可正常運作。</div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <button
-                      type="button"
-                      className="btn btn-default"
-                      style={{ marginTop: "8px" }}
-                      onClick={() => {
-                        const plugin = this.props.app?.getPlugin?.("blacklist");
-                        if (plugin?.openPanel) {
-                          this.handleCloseClick();
-                          setTimeout(() => plugin.openPanel(), 200);
-                        }
-                      }}
-                    >
-                      開啟黑名單管理面板
-                    </button>
-                  </div>
-                  <div className="form-group">
-                    <p className="help-block" style={{ marginTop: "12px" }}>
-                      <strong>提示：</strong>你也可以在 PTT 畫面上對使用者 ID
-                      按右鍵，透過右鍵選單快速加入黑名單或白名單。
-                    </p>
-                  </div>
+                  {(() => {
+                    const blacklistPlugin = this.props.app?.getPlugin?.("blacklist");
+                    return blacklistPlugin ? (
+                      <BlacklistPanel
+                        open
+                        embedded
+                        plugin={blacklistPlugin}
+                        data={blacklistPlugin.data}
+                        theme={blacklistPlugin.theme}
+                      />
+                    ) : (
+                      <div role="status">黑／白名單功能尚未載入。</div>
+                    );
+                  })()}
                 </div>
               </fieldset>
             )}

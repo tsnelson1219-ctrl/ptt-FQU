@@ -53,7 +53,7 @@ jobs:
       - name: Scan Windows Portable with Microsoft Defender
         shell: pwsh
         run: |
-          $portablePath = (Resolve-Path "work/PTT-FQU-3.1.2-portable").Path
+          $portablePath = (Resolve-Path "work/PTT-FQU-3.1.3-portable").Path
           Update-MpSignature
           Start-MpScan -ScanType CustomScan -ScanPath $portablePath
           Start-Sleep -Seconds 5
@@ -66,7 +66,7 @@ jobs:
           }
           $status = Get-MpComputerStatus
           @"
-          PTT-FQU 3.1.2 Portable
+          PTT-FQU 3.1.3 Portable
           Microsoft Defender: scan completed; no detections in this package.
           Signature version: $($status.AntivirusSignatureVersion)
           Scan time (UTC): $((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss'))
@@ -75,7 +75,7 @@ jobs:
       - name: Upload Windows Portable artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PTT-FQU-3.1.2-portable
+          name: PTT-FQU-3.1.3-portable
           path: work/
           if-no-files-found: error
           retention-days: 90

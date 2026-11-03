@@ -82,8 +82,16 @@ await cp(
   resolve(stage, "portable/README.txt")
 );
 await cp(
-  resolve(root, "portable/開始使用.bat"),
-  resolve(stage, "開始使用 PTT-FQU.bat")
+  resolve(root, "PTT-FQU.exe"),
+  resolve(stage, "PTT-FQU.exe")
+);
+await cp(
+  resolve(root, "關閉 PTT-FQU 背景服務.bat"),
+  resolve(stage, "關閉 PTT-FQU 背景服務.bat")
+);
+await cp(
+  resolve(root, "啟動 PTT-FQU.bat"),
+  resolve(stage, "啟動 PTT-FQU.bat")
 );
 await cp(nodePath, resolve(stage, "node.exe"));
 await cp(wsPath, resolve(stage, "node_modules/ws"), { recursive: true });

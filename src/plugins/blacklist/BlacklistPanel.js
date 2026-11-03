@@ -96,6 +96,8 @@ export class BlacklistPanel extends React.Component {
     toast: "",
     matchLimit: 8,
     expanded: false,
+    theme: null,
+    dataRevision: 0,
   };
 
   componentDidMount() {
@@ -107,13 +109,29 @@ export class BlacklistPanel extends React.Component {
     clearTimeout(this.toastTimer);
   }
 
+  handleEmbeddedKeyDownCapture = (event) => {
+    if (!this.props.embedded || event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.state.addOpen) this.setState({ addOpen: false });
+  };
+
   handleKeyDown = (event) => {
     if (!this.props.open) return;
     if (event.key === "Escape") {
       if (this.state.addOpen) this.setState({ addOpen: false });
-      else this.props.plugin.closePanel();
+      else if (!this.props.embedded) this.props.plugin.closePanel();
     }
   };
+
+  changeTheme = (theme) => {
+    this.setState({ theme });
+    this.props.plugin.setTheme(theme);
+  };
+
+  get data() {
+    return this.props.embedded ? this.props.plugin.data : this.props.data;
+  }
 
   notify = (message) => {
     clearTimeout(this.toastTimer);
@@ -153,6 +171,7 @@ export class BlacklistPanel extends React.Component {
         selected.delete(seq);
         return { selected };
       });
+      this.setState((state) => ({ dataRevision: state.dataRevision + 1 }));
       this.notify("已取消這筆加入");
     }
   };
@@ -164,7 +183,7 @@ export class BlacklistPanel extends React.Component {
       this.notify(result.reason === "duplicate" ? "項目已存在" : "請檢查輸入內容");
       return;
     }
-    this.setState({ addOpen: false, ruleValue: "", ruleNote: "", selected: new Set() });
+    this.setState((state) => ({ addOpen: false, ruleValue: "", ruleNote: "", selected: new Set(), dataRevision: state.dataRevision + 1 }));
     this.notify(this.state.activeTab === "whitelist" ? "已加入白名單" : "已加入黑名單");
   };
 
@@ -174,12 +193,13 @@ export class BlacklistPanel extends React.Component {
     const defaultType = this.state.activeTab === "whitelist" ? "allow-id" : "id";
     const added = this.props.plugin.importText(await file.text(), defaultType);
     event.target.value = "";
+    this.setState((state) => ({ dataRevision: state.dataRevision + 1 }));
     this.notify(`匯入 ${added} 筆`);
   };
 
   exportSelected = async () => {
     const isWhitelist = this.state.activeTab === "whitelist";
-    const selectedEvents = this.props.data.history
+    const selectedEvents = this.data.history
       .filter((event) => this.state.selected.has(Number(event.seq)) && !event.undone && (isWhitelist ? event.type === "allow-id" : event.type !== "allow-id"))
       .sort((a, b) => Number(a.seq) - Number(b.seq));
     const rows = selectedEvents
@@ -202,7 +222,7 @@ export class BlacklistPanel extends React.Component {
 
   exportCurrentList = async () => {
     const isWhitelist = this.state.activeTab === "whitelist";
-    const rows = this.props.data.rules.filter((rule) =>
+    const rows = this.data.rules.filter((rule) =>
       isWhitelist
         ? rule.type === "allow-id"
         : rule.type !== "watch" && rule.type !== "allow-id"
@@ -222,7 +242,7 @@ export class BlacklistPanel extends React.Component {
     const query = this.state.query.trim();
     if (!query) return null;
     const isWhitelist = this.state.activeTab === "whitelist";
-    const rules = this.props.data.rules.filter((rule) =>
+    const rules = this.data.rules.filter((rule) =>
       isWhitelist ? rule.type === "allow-id" : rule.type !== "allow-id"
     );
     if (query.includes("*")) {
@@ -263,7 +283,7 @@ export class BlacklistPanel extends React.Component {
     const exactType = isWhitelist ? "allow-id" : "id";
     const exact = rules.find((rule) => rule.type === exactType && rule.value.toLowerCase() === id);
     const partial = isWhitelist ? null : rules.find((rule) => rule.type === "idpart" && id.includes(rule.value.toLowerCase()));
-    const allowlisted = !isWhitelist && this.props.data.rules.some((rule) => rule.type === "allow-id" && rule.value.toLowerCase() === id);
+    const allowlisted = !isWhitelist && this.data.rules.some((rule) => rule.type === "allow-id" && rule.value.toLowerCase() === id);
     const blocked = !allowlisted && Boolean(exact || partial);
     const statusClass = isWhitelist
       ? (exact ? "is-allowed" : "is-clear")
@@ -281,8 +301,10 @@ export class BlacklistPanel extends React.Component {
   }
 
   render() {
-    const { open, data, theme, plugin } = this.props;
-    if (!open) return null;
+    const { open, embedded = false, plugin } = this.props;
+    const data = this.data;
+    const theme = this.state.theme || this.props.theme || plugin.theme;
+    if (!open && !embedded) return null;
     const isWhitelist = this.state.activeTab === "whitelist";
     const blacklistCount = data.rules.filter((rule) => rule.type === "id" || rule.type === "idpart").length;
     const activeCount = isWhitelist
@@ -292,15 +314,12 @@ export class BlacklistPanel extends React.Component {
       .filter((event) => !event.undone && (isWhitelist ? event.type === "allow-id" : event.type !== "allow-id"))
       .sort((a, b) => Number(b.seq) - Number(a.seq));
 
-    return (
-      <div className="PTTBlacklist__backdrop nomouse_command" onMouseDown={(event) => {
-        if (event.target === event.currentTarget) plugin.closePanel();
-      }}>
-        <section className={`PTTBlacklist PTTBlacklist--${theme}`} role="dialog" aria-modal="true" aria-label="黑／白名單管理">
+    const manager = (
+        <section className={`PTTBlacklist PTTBlacklist--${theme}${embedded ? " PTTBlacklist--embedded" : ""}`} role={embedded ? undefined : "dialog"} aria-modal={embedded ? undefined : "true"} aria-label="黑／白名單管理" onKeyDownCapture={this.handleEmbeddedKeyDownCapture}>
           <div className="PTTBlacklist__themeBar">
             <div className="PTTBlacklist__themeButtons" aria-label="主題">
-              <button type="button" className={theme === "dark" ? "is-active" : ""} aria-pressed={theme === "dark"} onClick={() => plugin.setTheme("dark")}>深色</button>
-              <button type="button" className={theme === "light" ? "is-active" : ""} aria-pressed={theme === "light"} onClick={() => plugin.setTheme("light")}>淺色</button>
+              <button type="button" className={theme === "dark" ? "is-active" : ""} aria-pressed={theme === "dark"} onClick={() => this.changeTheme("dark")}>深色</button>
+              <button type="button" className={theme === "light" ? "is-active" : ""} aria-pressed={theme === "light"} onClick={() => this.changeTheme("light")}>淺色</button>
             </div>
             <button type="button" className="PTTBlacklist__close" onClick={() => plugin.closePanel()} aria-label="關閉">×</button>
           </div>
@@ -382,6 +401,13 @@ export class BlacklistPanel extends React.Component {
 
           <div className={`PTTBlacklist__toast ${this.state.toast ? "is-visible" : ""}`} role="status">{this.state.toast}</div>
         </section>
+    );
+    if (embedded) return manager;
+    return (
+      <div className="PTTBlacklist__backdrop nomouse_command" onMouseDown={(event) => {
+        if (event.target === event.currentTarget) plugin.closePanel();
+      }}>
+        {manager}
       </div>
     );
   }
