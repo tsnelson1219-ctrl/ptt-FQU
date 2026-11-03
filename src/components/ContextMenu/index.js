@@ -260,6 +260,9 @@ export class ContextMenu extends React.Component {
   componentDidUpdate(prevProps) {
     if (prevProps.app !== this.props.app) {
       if (prevProps.app) {
+        if (prevProps.app.openSettings === this.openSettings) {
+          prevProps.app.openSettings = null;
+        }
         if (prevProps.app.openContextMenu) {
           prevProps.app.openContextMenu = null;
         }
@@ -272,6 +275,7 @@ export class ContextMenu extends React.Component {
       }
       const { app } = this.props;
       if (app) {
+        app.openSettings = this.openSettings;
         app.openContextMenu = (x, y) => {
           if (!this.isInstanceActive()) return;
           this.showMenuAt(x, y);
