@@ -2040,6 +2040,12 @@ export class PrefModal extends React.Component {
                             {plugin.renderOptions ? (
                               plugin.renderOptions({
                                 values,
+                                app: this.props.app,
+                                openSettingsTab: (tabKey) =>
+                                  this.setState({
+                                    expandedPluginId: null,
+                                    navActiveKey: tabKey,
+                                  }),
                                 handleCheckboxChange: this.handleCheckboxChange,
                                 handleNumberInputChange: this.handleNumberInputChange,
                                 handleSelectChange: this.handleSelectChange,

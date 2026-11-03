@@ -266,7 +266,7 @@ export class Blacklist extends PluginBase {
   static description = "管理黑名單規則與白名單作者 ID 例外。";
   static defaultPrefs = { enableBlacklist: true };
 
-  static renderOptions({ values, app }) {
+  static renderOptions({ values, app, openSettingsTab }) {
     const plugin = app?.getPlugin?.("blacklist");
     const rules = plugin?.data?.rules || [];
     const blCount = rules.filter((r) => r.type !== "allow-id").length;
@@ -285,10 +285,18 @@ export class Blacklist extends PluginBase {
           type: "button",
           className: "btn btn-primary btn-sm",
           onClick: () => {
+            if (typeof openSettingsTab === "function") {
+              openSettingsTab("blacklist");
+              return;
+            }
+            if (typeof app?.openSettings === "function") {
+              app.openSettings("blacklist");
+              return;
+            }
             plugin?.openPanel?.();
           },
         },
-        "開啟黑／白名單管理面板…"
+        "前往黑／白名單設定…"
       )
     );
   }
