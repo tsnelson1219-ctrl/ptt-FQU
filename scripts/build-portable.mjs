@@ -41,12 +41,17 @@ for (const path of [
   await rm(path, { recursive: true, force: true });
 }
 
-const commitHash =
-  process.env.COMMIT_HASH ||
-  execFileSync("git", ["rev-parse", "--short", "HEAD"], {
-    cwd: root,
-    encoding: "utf8",
-  }).trim();
+let commitHash = process.env.COMMIT_HASH || "";
+if (!commitHash) {
+  try {
+    commitHash = execFileSync("git", ["rev-parse", "--short", "HEAD"], {
+      cwd: root,
+      encoding: "utf8",
+    }).trim();
+  } catch {
+    commitHash = "v01";
+  }
+}
 const build = spawnSync(
   process.execPath,
   [resolve(root, "node_modules/vite/bin/vite.js"), "build"],
@@ -77,8 +82,16 @@ await cp(
   resolve(stage, "portable/README.txt")
 );
 await cp(
-  resolve(root, "portable/開始使用.bat"),
-  resolve(stage, "開始使用 PTT-FQU.bat")
+  resolve(root, "PTT-FQU.exe"),
+  resolve(stage, "PTT-FQU.exe")
+);
+await cp(
+  resolve(root, "關閉 PTT-FQU 背景服務.bat"),
+  resolve(stage, "關閉 PTT-FQU 背景服務.bat")
+);
+await cp(
+  resolve(root, "啟動 PTT-FQU.bat"),
+  resolve(stage, "啟動 PTT-FQU.bat")
 );
 await cp(nodePath, resolve(stage, "node.exe"));
 await cp(wsPath, resolve(stage, "node_modules/ws"), { recursive: true });
@@ -89,6 +102,18 @@ await writeFile(
 );
 
 console.log(`Portable package staged at: ${stage}`);
-console.log(
-  `Create the ZIP with: Compress-Archive -Path '${stage}' -DestinationPath '${archive}' -Force`
-);
+if (process.platform === "win32") {
+  const zip = spawnSync(
+    "powershell",
+    [
+      "-NoProfile",
+      "-Command",
+      `Compress-Archive -Path '${stage}' -DestinationPath '${archive}' -Force`,
+    ],
+    { stdio: "inherit" }
+  );
+  if (zip.status !== 0) throw new Error("建立 ZIP 失敗。");
+  console.log(`Portable ZIP created: ${archive}`);
+} else {
+  console.log(`Create the ZIP manually from: ${stage}`);
+}

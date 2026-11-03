@@ -14,11 +14,11 @@ export default defineConfig(({ mode, command }) => {
   const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8'));
 
   const theme = process.env.APP_THEME || process.env.THEME || 'default';
-  const appTitle = process.env.APP_TITLE || 'WebSocket Terminal';
-  const appShortName = process.env.APP_SHORT_NAME || 'WSTerm';
+  const appTitle = process.env.APP_TITLE || 'PTT-FQU';
+  const appShortName = process.env.APP_SHORT_NAME || 'PTT-FQU';
   const appDescription =
     process.env.APP_DESCRIPTION ||
-    'A web client for connecting to the ANSI based terminals via WebSockets.';
+    'PTT-FQU 批踢踢終端機客戶端';
   const dynamicTitle = process.env.DYNAMIC_TITLE ?? 'true';
   const siteUrl = process.env.SITE_URL;
   const productionSiteUrl =
@@ -57,8 +57,9 @@ export default defineConfig(({ mode, command }) => {
     start_url: './',
     scope: './',
     display: 'standalone',
+    display_override: ['window-controls-overlay', 'standalone'],
     background_color: '#000000',
-    theme_color: '#000000',
+    theme_color: '#1a1a1a',
     orientation: 'any',
     launch_handler: {
       client_mode: 'focus-existing',
