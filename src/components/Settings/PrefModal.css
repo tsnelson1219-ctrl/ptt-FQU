@@ -1232,7 +1232,11 @@ dialog.PrefModal .NativeDialog__content {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .PrefModal__TabBody--blacklist > .PrefModal__BlacklistToggle {
@@ -1247,4 +1251,12 @@ dialog.PrefModal .NativeDialog__content {
 .PrefModal__TabBody--blacklist > [role="status"] {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+.PrefModal__TabBody--blacklist > .PTTBlacklist.PTTBlacklist--embedded {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding-left: 0;
+  box-sizing: border-box;
 }
