@@ -36,15 +36,14 @@ function formatDate(value) {
   }).format(date);
 }
 
-async function downloadText(text, filename) {
+async async function downloadText(text, filename) {
   const contents = `\ufeff${text}`;
 
-  // Chromium desktop exposes the native Save As dialog on secure origins,
-  // including localhost. Keep the legacy download fallback for other browsers.
+  // Prefer the native Save As dialog where the browser supports it.
+  // localhost is treated as a secure context by Chromium desktop browsers.
   if (typeof window !== "undefined" && typeof window.showSaveFilePicker === "function") {
-    let handle;
     try {
-      handle = await window.showSaveFilePicker({
+      const handle = await window.showSaveFilePicker({
         suggestedName: filename,
         types: [
           {
@@ -58,11 +57,14 @@ async function downloadText(text, filename) {
       await writable.close();
       return "saved";
     } catch (error) {
+      // Closing the Save As dialog is a normal cancellation, not a failure.
       if (error?.name === "AbortError") return "cancelled";
       throw error;
     }
   }
 
+  // Fallback for browsers without the File System Access API. The browser
+  // controls the download location (or its own "ask where to save" setting).
   const blob = new Blob([contents], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
