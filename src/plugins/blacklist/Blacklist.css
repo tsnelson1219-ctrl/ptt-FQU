@@ -47,7 +47,7 @@
   box-shadow: none;
 }
 
-.PTTBlacklist--embedded .PTTBlacklist__themeBar {
+.PTTBlacklist--embedded .PTTBlacklist__close {
   display: none;
 }
 

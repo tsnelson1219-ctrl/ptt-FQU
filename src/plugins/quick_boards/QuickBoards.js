@@ -96,7 +96,7 @@ class QuickBoardsOverlay extends React.Component {
     return React.createElement(
       "div",
       {
-        className: "PTTQuickBoards",
+        className: "PTTQuickBoards nomouse_command",
         onMouseDown: (event) => event.stopPropagation(),
         onClick: (event) => event.stopPropagation(),
         onContextMenu: (event) => event.stopPropagation(),
@@ -148,7 +148,6 @@ class QuickBoardsOverlay extends React.Component {
           { className: "PTTQuickBoards__form", onSubmit: this.addBoard },
           React.createElement("input", {
             value: this.state.board,
-            onKeyDownCapture: (event) => event.stopPropagation(),
             onInput: (event) => this.setState({ board: event.target.value }),
             placeholder: "看板代號",
             maxLength: 30,
@@ -158,7 +157,6 @@ class QuickBoardsOverlay extends React.Component {
           }),
           React.createElement("input", {
             value: this.state.label,
-            onKeyDownCapture: (event) => event.stopPropagation(),
             onInput: (event) => this.setState({ label: event.target.value }),
             placeholder: "按鍵名稱（選填）",
             maxLength: MAX_LABEL_LENGTH,
