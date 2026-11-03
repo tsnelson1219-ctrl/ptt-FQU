@@ -1041,6 +1041,11 @@ export class PrefModal extends React.Component {
                   {_("options_general")}
                 </a>
               </li>
+              <li className={navActiveKey === "blacklist" ? "active" : ""}>
+                <a href="#" onClick={this.handleNavSelect("blacklist")}>
+                  黑名單設定
+                </a>
+              </li>
               <li className={navActiveKey === "appearance" ? "active" : ""}>
                 <a href="#" onClick={this.handleNavSelect("appearance")}>
                   {_("options_appearance")}
@@ -1059,11 +1064,6 @@ export class PrefModal extends React.Component {
               <li className={navActiveKey === "plugins" ? "active" : ""}>
                 <a href="#" onClick={this.handleNavSelect("plugins")}>
                   {_("options_plugins")}
-                </a>
-              </li>
-              <li className={navActiveKey === "blacklist" ? "active" : ""}>
-                <a href="#" onClick={this.handleNavSelect("blacklist")}>
-                  黑／白名單
                 </a>
               </li>
               <li className={navActiveKey === "advanced" ? "active" : ""}>
