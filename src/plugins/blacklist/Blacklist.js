@@ -353,14 +353,17 @@ export class Blacklist extends PluginBase {
     this.app?.emit?.("term:overlay:update");
   }
 
-  openPanel() {
-    if (typeof this.app?.openSettings === "function") {
-      if (this.showsPanel) this.closePanel();
-      this.app.openSettings("blacklist");
+  openPanel(app = this.app) {
+    if (typeof app?.openSettings === "function") {
+      if (this.showsPanel) {
+        this.showsPanel = false;
+        app?.emit?.("term:overlay:update");
+      }
+      app.openSettings("blacklist");
       return;
     }
     this.showsPanel = true;
-    this.app?.emit?.("term:overlay:update");
+    app?.emit?.("term:overlay:update");
   }
 
   closePanel() {
@@ -416,7 +419,7 @@ export class Blacklist extends PluginBase {
         showInNormal: true,
         label: "黑／白名單管理…",
         visible: () => true,
-        onClick: () => this.openPanel(),
+        onClick: (app) => this.openPanel(app || this.app),
       },
       {
         id: "whitelist-add-selected-id",
