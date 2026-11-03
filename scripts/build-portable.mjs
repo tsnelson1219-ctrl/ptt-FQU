@@ -49,7 +49,7 @@ if (!commitHash) {
       encoding: "utf8",
     }).trim();
   } catch {
-    commitHash = "v01";
+    commitHash = pkg.version;
   }
 }
 const build = spawnSync(
@@ -77,10 +77,9 @@ await cp(
   resolve(root, "portable/server.mjs"),
   resolve(stage, "portable/server.mjs")
 );
-await cp(
-  resolve(root, "portable/README.txt"),
-  resolve(stage, "portable/README.txt")
-);
+const portableReadme = (await readFile(resolve(root, "portable/README.txt"), "utf8"))
+  .replace(/\(v\d+\.\d+\.\d+\)/, `(v${pkg.version})`);
+await writeFile(resolve(stage, "portable/README.txt"), portableReadme, "utf8");
 await cp(
   resolve(root, "PTT-FQU.exe"),
   resolve(stage, "PTT-FQU.exe")
@@ -108,7 +107,7 @@ if (process.platform === "win32") {
     [
       "-NoProfile",
       "-Command",
-      `Compress-Archive -Path '${stage}' -DestinationPath '${archive}' -Force`,
+      `Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory('${stage}', '${archive}', [System.IO.Compression.CompressionLevel]::Optimal, $true)`,
     ],
     { stdio: "inherit" }
   );
