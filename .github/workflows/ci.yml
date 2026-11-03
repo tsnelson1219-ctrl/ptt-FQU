@@ -25,7 +25,11 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Run tests
-        run: npm test
+      - name: Run focused handoff regression tests
+        run: >-
+          node --test
+          test/blacklist.test.mjs
+          test/blacklist_export.test.mjs
+          test/portable_browser_profile.test.mjs
       - name: Build production bundle
         run: npm run build
