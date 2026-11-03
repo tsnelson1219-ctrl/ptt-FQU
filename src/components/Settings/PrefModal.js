@@ -596,6 +596,38 @@ const SelectOptionGroup = ({
   );
 };
 
+class SettingsTabErrorBoundary extends React.Component {
+  state = { error: null };
+
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  componentDidCatch(error, info) {
+    console.error("[PTT-FQU] 設定分頁載入失敗：", error, info);
+  }
+
+  render() {
+    if (this.state.error) {
+      const message = this.state.error?.message || String(this.state.error);
+      return (
+        <div
+          className="PrefModal__TabBody"
+          role="alert"
+          style={{ padding: "16px", color: "#b42318", overflow: "auto" }}
+        >
+          <strong>此設定分頁載入失敗</strong>
+          <p>其他設定分頁仍可繼續使用。請將以下錯誤訊息提供給維護者：</p>
+          <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+            {message}
+          </pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export class PrefModal extends React.Component {
   state = {
     navActiveKey: "general",
@@ -1083,6 +1115,7 @@ export class PrefModal extends React.Component {
             </div>
           </div>
           <div className="PrefModal__Grid__Col--right">
+            <SettingsTabErrorBoundary key={navActiveKey}>
             {navActiveKey === "general" && (
               <fieldset className="PrefModal__Grid__Col--right__Fieldset">
                 <TabLegend
@@ -2327,6 +2360,7 @@ export class PrefModal extends React.Component {
                 </div>
               </div>
             )}
+            </SettingsTabErrorBoundary>
           </div>
         </div>
       </NativeDialog>
