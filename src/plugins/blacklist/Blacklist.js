@@ -400,7 +400,7 @@ export class Blacklist extends PluginBase {
           const keyword = normalizeKeywordSelection(context.selectedText);
           const characters = Array.from(keyword);
           const preview = characters.slice(0, 18).join("");
-          return `加入黑名單：「${preview}${characters.length > 18 ? "…" : ""}」`;
+          return `過濾關鍵字:${preview}${characters.length > 18 ? "…" : ""}`;
         },
         visible: (app, context = {}) => Boolean(this.enabled && normalizeKeywordSelection(context.selectedText)),
         onClick: (app, { state } = {}) => {
