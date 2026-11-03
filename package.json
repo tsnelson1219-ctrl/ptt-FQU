@@ -1,6 +1,6 @@
 {
   "name": "ptt-term",
-  "version": "4.0.2",
+  "version": "4.0.3",
   "type": "module",
   "dependencies": {
     "classnames": "^2.5.1",
