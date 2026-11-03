@@ -1227,36 +1227,3 @@ dialog.PrefModal .NativeDialog__content {
     padding-bottom: 12px;
   }
 }
-
-.PrefModal__TabBody--blacklist {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-.PrefModal__TabBody--blacklist > .PrefModal__BlacklistToggle {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0;
-}
-
-.PrefModal__TabBody--blacklist > .PTTBlacklist,
-.PrefModal__TabBody--blacklist > [role="status"] {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.PrefModal__TabBody--blacklist > .PTTBlacklist.PTTBlacklist--embedded {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  padding-left: 0;
-  box-sizing: border-box;
-}
