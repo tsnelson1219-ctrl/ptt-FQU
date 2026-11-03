@@ -277,37 +277,6 @@ export class Blacklist extends PluginBase {
   static description = "管理黑名單規則與白名單作者 ID 例外。";
   static defaultPrefs = { enableBlacklist: true };
 
-  static renderOptions({ values, app, openSettingsTab }) {
-    const plugin = app?.getPlugin?.("blacklist");
-    const rules = plugin?.data?.rules || [];
-    const blCount = rules.filter((r) => r.type !== "allow-id").length;
-    const wlCount = rules.filter((r) => r.type === "allow-id").length;
-    return React.createElement(
-      "div",
-      { style: { padding: "8px 0" } },
-      React.createElement(
-        "p",
-        { style: { margin: "0 0 10px", color: "#aaa", fontSize: "13px" } },
-        `目前已儲存 ${blCount} 筆黑名單規則、${wlCount} 筆白名單規則。`
-      ),
-      React.createElement(
-        "button",
-        {
-          type: "button",
-          className: "btn btn-primary btn-sm",
-          onClick: () => {
-            if (typeof openSettingsTab === "function") {
-              openSettingsTab("blacklist");
-              return;
-            }
-            plugin?.openPanel?.();
-          },
-        },
-        "前往黑／白名單設定…"
-      )
-    );
-  }
-
   constructor(app, options = {}) {
     super(app, options);
     this.data = readData();
@@ -354,14 +323,6 @@ export class Blacklist extends PluginBase {
   }
 
   openPanel(app = this.app) {
-    if (typeof app?.openSettings === "function") {
-      if (this.showsPanel) {
-        this.showsPanel = false;
-        app?.emit?.("term:overlay:update");
-      }
-      app.openSettings("blacklist");
-      return;
-    }
     this.showsPanel = true;
     app?.emit?.("term:overlay:update");
   }
