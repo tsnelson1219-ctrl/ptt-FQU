@@ -10,22 +10,83 @@ const ID_RE = /^[a-z0-9][a-z0-9_-]{0,23}$/i;
 
 const makeEmptyData = () => ({ rules: [], history: [], nextSeq: 1 });
 
+export function normalizeBlacklistData(raw, migratedAt = new Date().toISOString()) {
+  if (!raw || typeof raw !== "object") {
+    return { ...makeEmptyData(), migrated: false };
+  }
+
+  const rules = Array.isArray(raw.rules)
+    ? raw.rules
+        .filter((rule) => RULE_TYPES.has(rule?.type) && String(rule.value || "").trim())
+        .map((rule) => ({ ...rule, value: String(rule.value).trim() }))
+    : [];
+  const rawHistory = Array.isArray(raw.history) ? raw.history : [];
+  const history = rawHistory
+    .filter((event) => Number.isFinite(Number(event?.seq)) && !event?.undone)
+    .map((event) => ({ ...event, seq: Number(event.seq) }));
+  const maxStoredSeq = rawHistory.reduce(
+    (max, event) => Math.max(max, Number(event?.seq) || 0),
+    0
+  );
+  let nextSeq = Math.max(Number(raw.nextSeq) || 1, maxStoredSeq + 1);
+  let migrated = false;
+  const linkedHistory = new Set();
+
+  for (const rule of rules) {
+    const matchesRule = (event) =>
+      event.type === rule.type &&
+      String(event.value || "").toLowerCase() === rule.value.toLowerCase();
+    const assignedSeq = Number(rule.addedBySeq);
+    const assigned = history.find(
+      (event) => Number(event.seq) === assignedSeq && matchesRule(event)
+    );
+    const orphan = assigned || history.find(
+      (event) => !linkedHistory.has(Number(event.seq)) && matchesRule(event)
+    );
+
+    if (orphan) {
+      rule.addedBySeq = Number(orphan.seq);
+      linkedHistory.add(Number(orphan.seq));
+      continue;
+    }
+
+    const seq = nextSeq++;
+    rule.addedBySeq = seq;
+    history.push({
+      seq,
+      date: migratedAt,
+      type: rule.type,
+      value: rule.value,
+      note: rule.note || "既有名單",
+      undone: false,
+    });
+    linkedHistory.add(seq);
+    migrated = true;
+  }
+
+  nextSeq = Math.max(
+    nextSeq,
+    ...history.map((event) => Number(event.seq) + 1),
+    1
+  );
+  history.sort((a, b) => Number(a.seq) - Number(b.seq));
+
+  return { rules, history, nextSeq, migrated };
+}
+
 function readData() {
   try {
     const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    if (!raw || typeof raw !== "object") return makeEmptyData();
-    const rules = Array.isArray(raw.rules)
-      ? raw.rules.filter((r) => RULE_TYPES.has(r?.type) && String(r.value || "").trim())
-      : [];
-    const history = Array.isArray(raw.history)
-      ? raw.history.filter((e) => Number.isFinite(Number(e?.seq)) && !e?.undone)
-      : [];
-    const maxSeq = history.reduce((max, e) => Math.max(max, Number(e.seq) || 0), 0);
-    return {
-      rules,
-      history,
-      nextSeq: Math.max(Number(raw.nextSeq) || 1, maxSeq + 1),
-    };
+    const normalized = normalizeBlacklistData(raw);
+    const { migrated, ...data } = normalized;
+    if (migrated) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch {
+        // Keep migrated rules visible even when storage is read-only.
+      }
+    }
+    return data;
   } catch {
     return makeEmptyData();
   }
@@ -305,6 +366,15 @@ export class Blacklist extends PluginBase {
     this.showsPanel = false;
   }
 
+  onInit() {
+    // Management and right-click actions remain available when filtering is disabled.
+    this.unregisterOverlay(this.id);
+    this.registerOverlay({
+      id: this.id,
+      render: (props) => this.renderOverlay(props),
+    });
+  }
+
   readTheme() {
     try {
       return localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark";
@@ -357,7 +427,7 @@ export class Blacklist extends PluginBase {
           const id = getContextAuthorId(app, context);
           return id ? `加入黑名單：${id}` : "加入黑名單";
         },
-        visible: (app, context = {}) => Boolean(this.enabled && getContextAuthorId(app, context)),
+        visible: (app, context = {}) => Boolean(getContextAuthorId(app, context)),
         onClick: (app, { state } = {}) => {
           const id = getContextAuthorId(app, state || {});
           if (id) this.addRule("id", id, "右鍵加入");
@@ -369,7 +439,7 @@ export class Blacklist extends PluginBase {
         showWhenSelected: true,
         showInNormal: true,
         label: "黑／白名單管理…",
-        visible: () => Boolean(this.enabled),
+        visible: () => true,
         onClick: () => this.openPanel(),
       },
       {
@@ -384,7 +454,7 @@ export class Blacklist extends PluginBase {
         },
         visible: (app, context = {}) => {
           const id = getContextAuthorId(app, context);
-          return Boolean(this.enabled && id && !this.isAllowlisted(id));
+          return Boolean(id && !this.isAllowlisted(id));
         },
         onClick: (app, { state } = {}) => {
           const id = getContextAuthorId(app, state || {});
@@ -402,7 +472,7 @@ export class Blacklist extends PluginBase {
           const preview = characters.slice(0, 18).join("");
           return `過濾關鍵字:${preview}${characters.length > 18 ? "…" : ""}`;
         },
-        visible: (app, context = {}) => Boolean(this.enabled && normalizeKeywordSelection(context.selectedText)),
+        visible: (app, context = {}) => Boolean(normalizeKeywordSelection(context.selectedText)),
         onClick: (app, { state } = {}) => {
           const keyword = normalizeKeywordSelection(state?.selectedText);
           if (keyword) this.addRule("keyword", keyword, "右鍵選取文字");
