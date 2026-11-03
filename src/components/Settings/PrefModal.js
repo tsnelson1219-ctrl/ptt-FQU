@@ -3,7 +3,6 @@ import React from "react";
 import NativeDialog from "../NativeDialog";
 import { _, setLocale } from "../../js/i18n";
 import { FontManager } from "./FontManager";
-import BlacklistPanel from "../../plugins/blacklist/BlacklistPanel.js";
 import "./PrefModal.css";
 import {
   DEFAULT_PREFS,
@@ -1041,11 +1040,6 @@ export class PrefModal extends React.Component {
                   {_("options_plugins")}
                 </a>
               </li>
-              <li className={navActiveKey === "blacklist" ? "active" : ""}>
-                <a href="#" onClick={this.handleNavSelect("blacklist")}>
-                  黑／白名單
-                </a>
-              </li>
               <li className={navActiveKey === "advanced" ? "active" : ""}>
                 <a href="#" onClick={this.handleNavSelect("advanced")}>
                   {_("options_advanced")}
@@ -2041,15 +2035,6 @@ export class PrefModal extends React.Component {
                               plugin.renderOptions({
                                 values,
                                 app: this.props.app,
-                                openSettingsTab: (tabKey) => {
-                                  this.props.app
-                                    ?.getPlugin?.("blacklist")
-                                    ?.closePanel?.();
-                                  this.setState({
-                                    expandedPluginId: null,
-                                    navActiveKey: tabKey,
-                                  });
-                                },
                                 handleCheckboxChange: this.handleCheckboxChange,
                                 handleNumberInputChange: this.handleNumberInputChange,
                                 handleSelectChange: this.handleSelectChange,
@@ -2070,46 +2055,6 @@ export class PrefModal extends React.Component {
                     );
                   })}
                 </div>
-                </div>
-              </fieldset>
-            )}
-            {navActiveKey === "blacklist" && (
-              <fieldset className="PrefModal__Grid__Col--right__Fieldset">
-                <TabLegend
-                  title="黑／白名單"
-                  onCloseClick={this.handleCloseClick}
-                />
-                <div className="PrefModal__TabBody PrefModal__TabBody--blacklist">
-                  <div className="form-group PrefModal__BlacklistToggle">
-                    <label className="control-label" htmlFor="enableBlacklistInput">
-                      啟用黑名單過濾
-                    </label>
-                    <label className="PrefModal__MacSwitchLabel">
-                      <input
-                        id="enableBlacklistInput"
-                        type="checkbox"
-                        className="PrefModal__MacSwitchInput"
-                        name="enableBlacklist"
-                        checked={values.enableBlacklist !== false}
-                        onChange={this.handleCheckboxChange}
-                      />
-                      <span className="PrefModal__MacSwitchSlider" />
-                    </label>
-                  </div>
-                  {(() => {
-                    const blacklistPlugin = this.props.app?.getPlugin?.("blacklist");
-                    return blacklistPlugin ? (
-                      <BlacklistPanel
-                        open
-                        embedded
-                        plugin={blacklistPlugin}
-                        data={blacklistPlugin.data}
-                        theme={blacklistPlugin.theme}
-                      />
-                    ) : (
-                      <div role="status">黑／白名單功能尚未載入。</div>
-                    );
-                  })()}
                 </div>
               </fieldset>
             )}
