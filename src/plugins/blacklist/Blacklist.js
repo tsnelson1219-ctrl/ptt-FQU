@@ -374,7 +374,13 @@ export class Blacklist extends PluginBase {
         showInNormal: true,
         label: "黑／白名單管理…",
         visible: () => true,
-        onClick: () => this.openPanel(),
+        onClick: (app) => {
+          if (typeof app?.openSettings === "function") {
+            app.openSettings("blacklist");
+            return;
+          }
+          this.openPanel();
+        },
       },
       {
         id: "whitelist-add-selected-id",
