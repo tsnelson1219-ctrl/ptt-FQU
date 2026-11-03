@@ -54,6 +54,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: PTT-FQU-3.1.0-portable
-          path: work/PTT-FQU-3.1.0-portable/
+          path: work/
           if-no-files-found: error
           retention-days: 14
