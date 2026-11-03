@@ -63,7 +63,7 @@ export class App extends EventEmitter {
     if (this.buf && this.buf.site !== this.site) {
       this.buf.site = this.site;
     }
-    this.titleBase = process.env.APP_TITLE;
+    this.titleBase = process.env.APP_TITLE || 'PTT-FQU';
     this.titleSite = null;
     this.titleConn = null;
     this.dynamicTitle = process.env.DYNAMIC_TITLE !== false;
@@ -653,12 +653,17 @@ export class App extends EventEmitter {
         this.titleConn = part.conn;
       }
     }
-    let title = this.titleBase;
+    let title = this.titleBase || 'PTT-FQU';
     if (this.dynamicTitle) {
       if (this.titleSite) {
         title += ' - ' + this.titleSite;
       }
-      if (this.titleConn) {
+      if (
+        this.titleConn &&
+        this.titleConn !== '127.0.0.1' &&
+        this.titleConn !== 'localhost' &&
+        this.titleConn !== 'ws.ptt.cc'
+      ) {
         title += ' - ' + this.titleConn;
       }
     }
