@@ -410,7 +410,7 @@ export class Blacklist extends PluginBase {
           const keyword = normalizeKeywordSelection(context.selectedText);
           const characters = Array.from(keyword);
           const preview = characters.slice(0, 18).join("");
-          return `過濾關鍵字:${preview}${characters.length > 18 ? "…" : ""}`;
+          return `過濾關鍵字： ${preview}${characters.length > 18 ? "…" : ""}`;
         },
         visible: (app, context = {}) => Boolean(normalizeKeywordSelection(context.selectedText)),
         onClick: (app, { state } = {}) => {
@@ -553,7 +553,7 @@ export class Blacklist extends PluginBase {
   }
 
   filterLines(lines) {
-    if (!Array.isArray(lines) || this.enabled === false) return lines;
+    if (!Array.isArray(lines)) return lines;
     const rules = this.data.rules.filter((rule) => rule.type !== "watch");
     if (!rules.length) return lines;
     const state = this.app?.site?.pageState;
