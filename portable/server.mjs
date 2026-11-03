@@ -155,7 +155,7 @@ const server = createServer(async (request, response) => {
 const wss = attachBbsProxy(server, { path: "/bbs" });
 
 let idleTimer = null;
-const IDLE_SHUTDOWN_TIMEOUT_MS = 30000;
+const IDLE_SHUTDOWN_TIMEOUT_MS = 2000;
 
 function checkIdle() {
   if (wss.clients.size === 0) {
@@ -187,9 +187,7 @@ wss.on("connection", (client) => {
     clearTimeout(idleTimer);
     idleTimer = null;
   }
-  client.on("close", () => {
-    setTimeout(checkIdle, 2000);
-  });
+  client.on("close", checkIdle);
 });
 
 server.listen(port, host, () => {

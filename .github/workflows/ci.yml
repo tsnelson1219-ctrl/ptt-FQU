@@ -50,10 +50,32 @@ jobs:
         run: npm ci
       - name: Build Windows Portable package
         run: npm run build:portable
+      - name: Scan Windows Portable with Microsoft Defender
+        shell: pwsh
+        run: |
+          $portablePath = (Resolve-Path "work/PTT-FQU-3.1.1-portable").Path
+          Update-MpSignature
+          Start-MpScan -ScanType CustomScan -ScanPath $portablePath
+          Start-Sleep -Seconds 5
+          $detections = Get-MpThreatDetection | Where-Object {
+            (($_.Resources -join "`n") -like "*$portablePath*")
+          }
+          if ($detections) {
+            $detections | Format-List *
+            throw "Microsoft Defender detected a threat in the portable package. Artifact upload stopped."
+          }
+          $status = Get-MpComputerStatus
+          @"
+          PTT-FQU 3.1.1 Portable
+          Microsoft Defender: scan completed; no detections in this package.
+          Signature version: $($status.AntivirusSignatureVersion)
+          Scan time (UTC): $((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss'))
+          Source commit: $env:GITHUB_SHA
+          "@ | Set-Content -Path (Join-Path $portablePath "安全掃描結果.txt") -Encoding utf8
       - name: Upload Windows Portable artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PTT-FQU-3.1.0-portable
+          name: PTT-FQU-3.1.1-portable
           path: work/
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 90
