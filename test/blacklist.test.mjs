@@ -46,3 +46,11 @@ test('right-click blacklist tools do not disappear when filtering is disabled', 
   assert.match(menu, /id: "blacklist-open-manager"[\s\S]*?visible: \(\) => true/);
   assert.match(source, /onInit\(\)[\s\S]*?this\.registerOverlay\(/);
 });
+
+test('a keyword match in an article hides the complete body, not only the matching row', () => {
+  assert.match(source, /const keywordRules = rules\.filter\(\(rule\) => rule\.type === "keyword"\)/);
+  assert.match(source, /const keywordMatch = keywordRules\.length > 0 && texts\.some/);
+  assert.match(source, /for \(let row = authorRow \+ 1; row < readingContentEnd; row \+= 1\)/);
+  assert.match(source, /PTT-FQU: hidden keyword/);
+});
+
