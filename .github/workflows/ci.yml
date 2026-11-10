@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - gpt6-handoff-fixes
+      - fix/reconnect-blacklist-v1
   pull_request:
     branches:
       - main
@@ -29,6 +30,7 @@ jobs:
         run: >-
           node --test
           test/blacklist.test.mjs
+          test/reconnect.test.mjs
           test/blacklist_export.test.mjs
           test/quick_boards_input.test.mjs
           test/portable_origin.test.mjs
