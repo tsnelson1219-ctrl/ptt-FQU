@@ -501,7 +501,6 @@ export class App extends EventEmitter {
 
   _doConnect(url, siteType) {
     this._hasConnectedOnce = true;
-    this.dismissAlert('connection');
     this.connectState = 0;
     console.log('connect: ' + url + ', siteType: ' + siteType);
 
@@ -523,16 +522,40 @@ export class App extends EventEmitter {
       this.setSite(siteType);
     }
 
+    // Retire the previous transport before replacing it. Its late events must
+    // not be allowed to change the state of the new connection.
+    const previousConn = this.conn;
+    if (previousConn) {
+      this.conn = null;
+      previousConn.close();
+    }
+
     const wsConn = new Websocket(parsed.url);
     this.emit('term:socket', { socket: wsConn });
     this.conn = wsConn;
     this.stream.attach(wsConn);
     this.stream.charset = this.site ? this.site.charset : 'big5';
-    this.conn.addEventListener('open', () => this.onConnect());
-    this.conn.addEventListener('close', () => this.onClose());
-    this.conn.addEventListener('data', (e) => {
-      this.site.onData(e.data, this.buf);
+    wsConn.addEventListener('open', () => this.onConnect(wsConn));
+    wsConn.addEventListener('error', (event) => {
+      if (this.conn === wsConn) {
+        console.warn('websocket connection error', event);
+      }
     });
+    wsConn.addEventListener('close', () => this.onClose(wsConn));
+    wsConn.addEventListener('data', (e) => {
+      if (this.conn === wsConn) {
+        this.site.onData(e.data, this.buf);
+      }
+    });
+
+    // A socket can remain in CONNECTING if the proxy/network never completes
+    // the handshake. Turn that silent hang into the normal disconnect path.
+    this.connectionTimeout = setTimeout(() => {
+      if (this.conn === wsConn && !wsConn.isConnected) {
+        console.warn('websocket connection timed out');
+        wsConn.close();
+      }
+    }, 15000);
 
     this.connectedUrl = {
       url: url,
@@ -544,8 +567,14 @@ export class App extends EventEmitter {
     };
   }
 
-  onConnect() {
-    this.conn.isConnected = true;
+  onConnect(wsConn = this.conn) {
+    if (!wsConn || this.conn !== wsConn) return;
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+    this.dismissAlert('connection');
+    wsConn.isConnected = true;
     if (this.stream) {
       this.stream.charset = this.site ? this.site.charset : 'big5';
       this.stream.sendWillNaws(this.buf.cols, this.buf.rows);
@@ -576,14 +605,19 @@ export class App extends EventEmitter {
     );
   }
 
-  onClose() {
+  onClose(wsConn = this.conn) {
+    if (!wsConn || this.conn !== wsConn) return;
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
     console.info('app onClose');
     this.clearBellTabAlert();
     if (this.timerEverySec) {
       this.timerEverySec.cancel();
       this.timerEverySec = null;
     }
-    this.conn.isConnected = false;
+    wsConn.isConnected = false;
     this.site?.resetLoginPrompt?.();
 
     this.connectState = 2;
