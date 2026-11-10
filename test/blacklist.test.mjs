@@ -13,7 +13,8 @@ test('a whitelisted article author must not short-circuit the entire reading pag
 
 test('allowlisted authors are exempt from ID rules but still pass through keyword rules', () => {
   assert.match(source, /const authorAllowlisted = Boolean\(author\?\.id && this\.isAllowlisted\(author\.id\)\)/);
-  assert.match(source, /const hasKeyword = rules\.some\(\(rule\) => rule\.type === "keyword"/);
+  assert.match(source, /const hasKeyword = isArticleContentRow && rules\.some\(\(rule\) =>/);
+  assert.match(source, /rule\.type === "keyword" && searchableText\.includes/);
   assert.match(source, /const blockedAuthor = Boolean\(author\?\.id && !authorAllowlisted && this\.matchesId\(author\.id\)\)/);
 });
 
