@@ -590,6 +590,31 @@ export class Blacklist extends PluginBase {
       }
     }
 
+      // Treat a keyword match as an article-level rule. Keep the author row
+      // visible, but hide the complete article body (including unmatched rows).
+      const keywordRules = rules.filter((rule) => rule.type === "keyword");
+      const keywordMatch = keywordRules.length > 0 && texts.some((text, index) =>
+        index > authorRow &&
+        index < readingContentEnd &&
+        keywordRules.some((rule) =>
+          normalizeKeywordText(text).includes(normalizeKeywordText(rule.value))
+        )
+      );
+      if (keywordMatch) {
+        const result = lines.slice();
+        for (let row = authorRow + 1; row < readingContentEnd; row += 1) {
+          result[row] = blankRow(lines[row]);
+        }
+        if (authorRow + 1 < readingContentEnd) {
+          result[authorRow + 1] = blankRow(
+            lines[authorRow + 1],
+            "PTT-FQU: hidden keyword"
+          );
+        }
+        return result;
+      }
+    }
+
     let changed = false;
     const result = lines.map((row, index) => {
       const text = texts[index];
