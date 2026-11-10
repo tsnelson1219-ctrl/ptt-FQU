@@ -522,6 +522,11 @@ export class App extends EventEmitter {
       this.setSite(siteType);
     }
 
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+
     // Retire the previous transport before replacing it. Its late events must
     // not be allowed to change the state of the new connection.
     const previousConn = this.conn;
