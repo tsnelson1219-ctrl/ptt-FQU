@@ -588,7 +588,6 @@ export class Blacklist extends PluginBase {
         }
         return result;
       }
-    }
 
       // Treat a keyword match as an article-level rule. Keep the author row
       // visible, but hide the complete article body (including unmatched rows).
